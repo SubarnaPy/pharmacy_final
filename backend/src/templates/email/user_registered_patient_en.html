@@ -1,0 +1,210 @@
+<!-- SUBJECT: Welcome to {{appName}} - Your Account is Ready! -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to {{appName}} - Your Account is Ready!</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f8fafc;
+        }
+        .container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+            color: white; 
+            padding: 40px 20px; 
+            text-align: center; 
+        }
+        .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+        .content { padding: 40px 30px; }
+        .welcome-card {
+            background: #eff6ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+            text-align: center;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .feature-card {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+        .button { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+            color: white; 
+            padding: 16px 32px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin: 20px 10px; 
+            font-weight: 600;
+            text-align: center;
+        }
+        .button.secondary { 
+            background: #6b7280; 
+        }
+        .next-steps {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 40px; 
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px; 
+            color: #6b7280; 
+        }
+        .footer a { color: #3b82f6; text-decoration: none; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .content { padding: 24px 20px; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .button { display: block; margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Welcome to {{appName}}!</h1>
+            <p style="margin: 15px 0 0 0; opacity: 0.9; font-size: 18px;">Your healthcare journey starts here</p>
+        </div>
+        
+        <div class="content">
+            <div class="welcome-card">
+                <h2 style="margin-top: 0; color: #1d4ed8;">Hello {{user.firstName}}! 👋</h2>
+                <p style="font-size: 18px; margin: 16px 0;">
+                    Your account has been successfully created and verified. You now have access to our comprehensive healthcare platform.
+                </p>
+            </div>
+            
+            <p>We're excited to have you join our community of patients, doctors, and healthcare providers working together to make healthcare more accessible and convenient.</p>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🏥</div>
+                    <h3 style="margin: 0 0 8px 0; color: #374151;">Find Healthcare Providers</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                        Search and connect with qualified doctors and specialists in your area
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💊</div>
+                    <h3 style="margin: 0 0 8px 0; color: #374151;">Order Medications</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                        Get prescriptions filled and delivered from trusted pharmacies
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📅</div>
+                    <h3 style="margin: 0 0 8px 0; color: #374151;">Book Appointments</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                        Schedule in-person or virtual consultations at your convenience
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3 style="margin: 0 0 8px 0; color: #374151;">Track Your Health</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                        Manage prescriptions, appointments, and health records in one place
+                    </p>
+                </div>
+            </div>
+            
+            <div class="next-steps">
+                <h3 style="margin-top: 0; color: #059669;">🚀 Get Started in 3 Easy Steps</h3>
+                <ol style="margin: 16px 0 0 0; padding-left: 24px;">
+                    <li style="margin: 8px 0;"><strong>Complete Your Profile:</strong> Add your medical history and insurance information</li>
+                    <li style="margin: 8px 0;"><strong>Find a Doctor:</strong> Browse our network of qualified healthcare providers</li>
+                    <li style="margin: 8px 0;"><strong>Book Your First Appointment:</strong> Schedule a consultation or health check-up</li>
+                </ol>
+            </div>
+            
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{{appUrl}}/dashboard" class="button">
+                    🏠 Go to Dashboard
+                </a>
+                <a href="{{appUrl}}/profile/complete" class="button secondary">
+                    ✏️ Complete Profile
+                </a>
+            </div>
+            
+            <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                <h4 style="margin-top: 0; color: #92400e;">📞 Need Help Getting Started?</h4>
+                <p style="margin: 8px 0;">
+                    Our support team is here to help you make the most of {{appName}}:
+                </p>
+                <ul style="margin: 12px 0 0 0; padding-left: 20px;">
+                    <li>📧 Email us at <a href="mailto:{{supportEmail}}" style="color: #92400e;">{{supportEmail}}</a></li>
+                    <li>📞 Call us at {{supportPhone}}</li>
+                    <li>💬 Use our in-app chat support</li>
+                    <li>📚 Check out our <a href="{{appUrl}}/help" style="color: #92400e;">Help Center</a></li>
+                </ul>
+            </div>
+            
+            <div style="background: #eff6ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                <h4 style="margin-top: 0; color: #1d4ed8;">🔒 Your Privacy & Security</h4>
+                <p style="margin: 8px 0;">
+                    We take your privacy seriously. Your health information is protected with:
+                </p>
+                <ul style="margin: 12px 0 0 0; padding-left: 20px;">
+                    <li>HIPAA-compliant data encryption</li>
+                    <li>Secure authentication and access controls</li>
+                    <li>Regular security audits and monitoring</li>
+                    <li>Transparent privacy policies</li>
+                </ul>
+                <p style="margin: 12px 0 0 0; font-size: 14px;">
+                    <a href="{{appUrl}}/privacy" style="color: #1d4ed8;">Read our Privacy Policy</a> | 
+                    <a href="{{appUrl}}/security" style="color: #1d4ed8;">Learn about Security</a>
+                </p>
+            </div>
+            
+            <p style="margin-top: 32px; text-align: center; color: #6b7280;">
+                Welcome aboard! We're here to support your health and wellness journey every step of the way.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+            <p>
+                <a href="{{appUrl}}/dashboard">Dashboard</a> | 
+                <a href="{{appUrl}}/doctors">Find Doctors</a> | 
+                <a href="{{appUrl}}/pharmacies">Find Pharmacies</a> | 
+                <a href="{{appUrl}}/help">Help Center</a>
+            </p>
+            <p style="margin-top: 16px; font-size: 12px;">
+                You're receiving this email because you created an account with {{appName}}.<br>
+                <a href="{{appUrl}}/unsubscribe?token={{unsubscribeToken}}">Unsubscribe</a> | 
+                <a href="{{appUrl}}/preferences">Email Preferences</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

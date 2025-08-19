@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Two-Factor Authentication Disabled</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Security Notice</h1>
+    </div>
+    <div class="content">
+        <p>Hello {{firstName}},</p>
+        <p>Two-factor authentication has been disabled for your {{appName}} account.</p>
+        <p><strong>Disabled on:</strong> {{disabledAt}}</p>
+        <p>Your account security has been reduced. We recommend re-enabling two-factor authentication to keep your account secure.</p>
+        <p>If you didn't disable two-factor authentication, please contact our support team immediately.</p>
+    </div>
+    <div class="footer">
+        <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+        <p>If you have any questions, contact us at {{supportEmail}}</p>
+    </div>
+</body>
+</html>

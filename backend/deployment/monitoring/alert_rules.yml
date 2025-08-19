@@ -1,0 +1,337 @@
+# Prometheus Alert Rules for Advanced Notification System
+
+groups:
+  - name: notification-service-alerts
+    rules:
+      # Service Availability Alerts
+      - alert: NotificationServiceDown
+        expr: up{job="notification-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: notification-service
+        annotations:
+          summary: "Notification service instance is down"
+          description: "Notification service instance {{ $labels.instance }} has been down for more than 1 minute"
+          runbook_url: "https://docs.yourdomain.com/runbooks/notification-service-down"
+
+      - alert: NotificationServiceHighErrorRate
+        expr: rate(http_requests_total{job="notification-service",status=~"5.."}[5m]) / rate(http_requests_total{job="notification-service"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: notification-service
+        annotations:
+          summary: "High error rate in notification service"
+          description: "Error rate is {{ $value | humanizePercentage }} for instance {{ $labels.instance }}"
+
+      - alert: NotificationServiceHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="notification-service"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: notification-service
+        annotations:
+          summary: "High latency in notification service"
+          description: "95th percentile latency is {{ $value }}s for instance {{ $labels.instance }}"
+
+  - name: notification-delivery-alerts
+    rules:
+      # Notification Delivery Alerts
+      - alert: HighNotificationFailureRate
+        expr: rate(notifications_sent_total{status="failed"}[5m]) / rate(notifications_sent_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: notification-delivery
+        annotations:
+          summary: "High notification failure rate"
+          description: "Notification failure rate is {{ $value | humanizePercentage }} for channel {{ $labels.channel }}"
+
+      - alert: NotificationQueueBacklog
+        expr: notification_queue_size > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: notification-queue
+        annotations:
+          summary: "Large notification queue backlog"
+          description: "Notification queue size is {{ $value }} notifications"
+
+      - alert: NotificationDeliveryDelay
+        expr: histogram_quantile(0.95, rate(notification_delivery_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: notification-delivery
+        annotations:
+          summary: "High notification delivery delay"
+          description: "95th percentile delivery time is {{ $value }}s for channel {{ $labels.channel }}"
+
+      - alert: CriticalNotificationFailure
+        expr: increase(notifications_sent_total{priority="critical",status="failed"}[1m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: notification-delivery
+        annotations:
+          summary: "Critical notification delivery failure"
+          description: "{{ $value }} critical notifications failed to deliver in the last minute"
+
+  - name: external-service-alerts
+    rules:
+      # External Service Alerts
+      - alert: SendGridServiceDown
+        expr: probe_success{instance=~".*sendgrid.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: sendgrid
+        annotations:
+          summary: "SendGrid API is unreachable"
+          description: "SendGrid API has been unreachable for more than 2 minutes"
+
+      - alert: TwilioServiceDown
+        expr: probe_success{instance=~".*twilio.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: twilio
+        annotations:
+          summary: "Twilio API is unreachable"
+          description: "Twilio API has been unreachable for more than 2 minutes"
+
+      - alert: ExternalServiceHighLatency
+        expr: probe_duration_seconds > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: external-api
+        annotations:
+          summary: "High latency to external service"
+          description: "Response time to {{ $labels.instance }} is {{ $value }}s"
+
+      - alert: ExternalServiceRateLimited
+        expr: increase(external_service_rate_limited_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: external-api
+        annotations:
+          summary: "External service rate limiting detected"
+          description: "{{ $value }} rate limit responses from {{ $labels.provider }} in the last 5 minutes"
+
+  - name: database-alerts
+    rules:
+      # Database Alerts
+      - alert: MongoDBDown
+        expr: mongodb_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: mongodb
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB instance {{ $labels.instance }} is down"
+
+      - alert: MongoDBHighConnections
+        expr: mongodb_connections{state="current"} / mongodb_connections{state="available"} > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: mongodb
+        annotations:
+          summary: "MongoDB high connection usage"
+          description: "MongoDB connection usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+      - alert: MongoDBSlowQueries
+        expr: rate(mongodb_op_counters_total[5m]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: mongodb
+        annotations:
+          summary: "MongoDB high query rate"
+          description: "MongoDB query rate is {{ $value }} ops/sec on {{ $labels.instance }}"
+
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance {{ $labels.instance }} is down"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+      - alert: RedisHighConnections
+        expr: redis_connected_clients > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis high connection count"
+          description: "Redis has {{ $value }} connected clients on {{ $labels.instance }}"
+
+  - name: system-resource-alerts
+    rules:
+      # System Resource Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High disk usage"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }} for filesystem {{ $labels.mountpoint }}"
+
+      - alert: DiskSpaceCritical
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "Critical disk space"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }} for filesystem {{ $labels.mountpoint }}"
+
+  - name: application-performance-alerts
+    rules:
+      # Application Performance Alerts
+      - alert: HighWebSocketConnections
+        expr: websocket_connections_active > 5000
+        for: 5m
+        labels:
+          severity: warning
+          service: websocket
+        annotations:
+          summary: "High WebSocket connection count"
+          description: "{{ $value }} active WebSocket connections on {{ $labels.instance }}"
+
+      - alert: HighNotificationProcessingTime
+        expr: histogram_quantile(0.95, rate(notification_processing_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: notification-processing
+        annotations:
+          summary: "High notification processing time"
+          description: "95th percentile processing time is {{ $value }}s"
+
+      - alert: TemplateRenderingFailures
+        expr: rate(template_rendering_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: template-engine
+        annotations:
+          summary: "Template rendering failures"
+          description: "Template rendering failure rate is {{ $value }} failures/sec"
+
+      - alert: CacheHitRateLow
+        expr: redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total) < 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+  - name: security-alerts
+    rules:
+      # Security Alerts
+      - alert: HighFailedAuthenticationRate
+        expr: rate(authentication_failures_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: authentication
+        annotations:
+          summary: "High authentication failure rate"
+          description: "{{ $value }} authentication failures per second"
+
+      - alert: SuspiciousActivity
+        expr: rate(suspicious_activity_total[5m]) > 1
+        for: 1m
+        labels:
+          severity: critical
+          service: security
+        annotations:
+          summary: "Suspicious activity detected"
+          description: "{{ $value }} suspicious activities detected per second"
+
+      - alert: RateLimitExceeded
+        expr: rate(rate_limit_exceeded_total[5m]) > 50
+        for: 2m
+        labels:
+          severity: warning
+          service: rate-limiting
+        annotations:
+          summary: "High rate limit violations"
+          description: "{{ $value }} rate limit violations per second from {{ $labels.client_ip }}"
+
+  - name: business-metric-alerts
+    rules:
+      # Business Metric Alerts
+      - alert: LowNotificationDeliveryRate
+        expr: rate(notifications_sent_total{status="delivered"}[1h]) / rate(notifications_sent_total[1h]) < 0.95
+        for: 10m
+        labels:
+          severity: warning
+          service: business-metrics
+        annotations:
+          summary: "Low notification delivery rate"
+          description: "Notification delivery rate is {{ $value | humanizePercentage }} over the last hour"
+
+      - alert: UnusualNotificationVolume
+        expr: rate(notifications_sent_total[5m]) > 100 or rate(notifications_sent_total[5m]) < 1
+        for: 10m
+        labels:
+          severity: warning
+          service: business-metrics
+        annotations:
+          summary: "Unusual notification volume"
+          description: "Notification rate is {{ $value }} notifications/sec, which is outside normal range"
+
+      - alert: HighUserEngagementDrop
+        expr: rate(notification_actions_total[1h]) / rate(notifications_sent_total{status="delivered"}[1h]) < 0.1
+        for: 30m
+        labels:
+          severity: warning
+          service: business-metrics
+        annotations:
+          summary: "Low user engagement with notifications"
+          description: "User engagement rate is {{ $value | humanizePercentage }} over the last hour"

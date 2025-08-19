@@ -1,0 +1,197 @@
+/* Leaflet Map Styles */
+@import 'leaflet/dist/leaflet.css';
+
+/* Custom map container styling */
+.leaflet-container {
+  font-family: inherit;
+}
+
+/* Dark mode support for map controls */
+.dark .leaflet-control-zoom a,
+.dark .leaflet-control-attribution {
+  background-color: #374151 !important;
+  color: #f9fafb !important;
+  border-color: #4b5563 !important;
+}
+
+.dark .leaflet-control-zoom a:hover {
+  background-color: #4b5563 !important;
+}
+
+/* Custom marker popup styling */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
+
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background: #374151 !important;
+  color: #f9fafb !important;
+}
+
+/* Map loading overlay */
+.map-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: inherit;
+}
+
+.dark .map-loading-overlay {
+  background: rgba(17, 24, 39, 0.8);
+}
+
+/* Search results dropdown styling */
+.map-search-results {
+  max-height: 200px;
+  overflow-y: auto;
+  border-radius: 0 0 8px 8px;
+}
+
+.map-search-results::-webkit-scrollbar {
+  width: 6px;
+}
+
+.map-search-results::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.dark .map-search-results::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.map-search-results::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dark .map-search-results::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+/* Location marker animation */
+.location-marker {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Map container responsive design */
+.map-container {
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .leaflet-control-zoom {
+    margin-left: 10px !important;
+    margin-top: 10px !important;
+  }
+  
+  .leaflet-control-attribution {
+    display: none !important;
+  }
+}
+
+/* Address input field enhancements */
+.address-search-input {
+  transition: all 0.2s ease-in-out;
+}
+
+.address-search-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Location info card styling */
+.location-info-card {
+  backdrop-filter: blur(8px);
+}
+
+/* Pharmacy distance indicator */
+.distance-indicator {
+  position: relative;
+}
+
+.distance-indicator::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* Loading skeleton for nearby pharmacies */
+.pharmacy-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+.dark .pharmacy-skeleton {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Service tags styling */
+.service-tag {
+  transition: all 0.2s ease-in-out;
+}
+
+.service-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dark .service-tag:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Map error state styling */
+.map-error {
+  background: repeating-linear-gradient(
+    45deg,
+    #fee2e2,
+    #fee2e2 10px,
+    #fecaca 10px,
+    #fecaca 20px
+  );
+}
+
+.dark .map-error {
+  background: repeating-linear-gradient(
+    45deg,
+    #7f1d1d,
+    #7f1d1d 10px,
+    #991b1b 10px,
+    #991b1b 20px
+  );
+}

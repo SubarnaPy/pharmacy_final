@@ -1,0 +1,197 @@
+<!-- SUBJECT: New Prescription Request - Action Required -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>New Prescription Request - Action Required</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f8fafc;
+        }
+        .container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { 
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center; 
+        }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 30px; }
+        .prescription-card {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .prescription-details {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .prescription-details:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #374151; }
+        .value { color: #6b7280; }
+        .button { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); 
+            color: white; 
+            padding: 14px 28px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin: 10px 5px; 
+            font-weight: 600;
+            text-align: center;
+        }
+        .button.secondary { 
+            background: #6b7280; 
+        }
+        .urgent-notice {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .medication-list {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 15px 0;
+        }
+        .medication-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .medication-item:last-child { border-bottom: none; }
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px; 
+            color: #6b7280; 
+        }
+        .footer a { color: #dc2626; text-decoration: none; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .content { padding: 20px; }
+            .prescription-details { flex-direction: column; }
+            .button { display: block; margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 New Prescription Request</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Action required - Patient waiting for response</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{pharmacy.name}}</strong> Team,</p>
+            
+            <div class="urgent-notice">
+                <strong>⏰ Time-Sensitive Request</strong><br>
+                A patient is waiting for your response to this prescription request.
+            </div>
+            
+            <p>You have received a new prescription request that requires your immediate attention:</p>
+            
+            <div class="prescription-card">
+                <h3 style="margin-top: 0; color: #dc2626;">📋 Prescription Information</h3>
+                
+                <div class="prescription-details">
+                    <span class="label">Prescription ID:</span>
+                    <span class="value">#{{prescription.id}}</span>
+                </div>
+                
+                <div class="prescription-details">
+                    <span class="label">Patient:</span>
+                    <span class="value">{{patient.firstName}} {{patient.lastName}}</span>
+                </div>
+                
+                <div class="prescription-details">
+                    <span class="label">Doctor:</span>
+                    <span class="value">Dr. {{doctor.firstName}} {{doctor.lastName}}</span>
+                </div>
+                
+                <div class="prescription-details">
+                    <span class="label">Date Created:</span>
+                    <span class="value">{{prescription.createdAt}}</span>
+                </div>
+                
+                <div class="prescription-details">
+                    <span class="label">Patient Location:</span>
+                    <span class="value">{{patient.address.city}}, {{patient.address.state}}</span>
+                </div>
+            </div>
+            
+            <div class="medication-list">
+                <h4 style="margin-top: 0; color: #374151;">💊 Medications Requested</h4>
+                {{#each prescription.medications}}
+                <div class="medication-item">
+                    <strong>{{name}}</strong><br>
+                    <span style="color: #6b7280;">
+                        Dosage: {{dosage}} | Quantity: {{quantity}} | Duration: {{duration}}
+                    </span>
+                    {{#if notes}}
+                    <br><em style="color: #9ca3af;">Notes: {{notes}}</em>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+            
+            {{#if prescription.notes}}
+            <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                <strong>Doctor's Notes:</strong><br>
+                {{prescription.notes}}
+            </div>
+            {{/if}}
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{appUrl}}/pharmacy/prescriptions/{{prescription.id}}/respond" class="button">
+                    📝 Respond to Request
+                </a>
+                <a href="{{appUrl}}/pharmacy/prescriptions/{{prescription.id}}" class="button secondary">
+                    👁️ View Details
+                </a>
+            </div>
+            
+            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>📋 Response Options:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li><strong>Accept:</strong> Provide pricing and availability information</li>
+                    <li><strong>Partial Accept:</strong> Specify which medications you can fulfill</li>
+                    <li><strong>Decline:</strong> Indicate if you cannot fulfill this request</li>
+                    <li><strong>Request Info:</strong> Ask for clarification from the doctor</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #6b7280;">
+                <strong>Important:</strong> Please respond within 2 hours to maintain good service ratings. 
+                The patient will be notified of your response immediately.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+            <p>
+                <a href="{{appUrl}}/pharmacy/dashboard">Pharmacy Dashboard</a> | 
+                <a href="{{appUrl}}/pharmacy/prescriptions">All Requests</a> | 
+                <a href="{{supportEmail}}">{{supportEmail}}</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!-- SUBJECT: Low Stock Alert - Immediate Action Required -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Low Stock Alert - Immediate Action Required</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f8fafc;
+        }
+        .container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { 
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center; 
+        }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 30px; }
+        .alert-banner {
+            background: #fef2f2;
+            border: 2px solid #fecaca;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .alert-level {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        .alert-level.critical { background: #fecaca; color: #991b1b; }
+        .alert-level.warning { background: #fef3c7; color: #92400e; }
+        .alert-level.low { background: #fed7aa; color: #9a3412; }
+        .inventory-list {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 15px 0;
+        }
+        .inventory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 4px solid #dc2626;
+        }
+        .inventory-item.critical { background: #fef2f2; border-left-color: #dc2626; }
+        .inventory-item.warning { background: #fffbeb; border-left-color: #f59e0b; }
+        .inventory-item.low { background: #fff7ed; border-left-color: #ea580c; }
+        .stock-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .current-stock {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .current-stock.critical { color: #dc2626; }
+        .current-stock.warning { color: #f59e0b; }
+        .current-stock.low { color: #ea580c; }
+        .button { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); 
+            color: white; 
+            padding: 14px 28px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin: 10px 5px; 
+            font-weight: 600;
+            text-align: center;
+        }
+        .button.secondary { 
+            background: #6b7280; 
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+        .stat-number.critical { color: #dc2626; }
+        .stat-number.warning { color: #f59e0b; }
+        .stat-number.low { color: #ea580c; }
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px; 
+            color: #6b7280; 
+        }
+        .footer a { color: #dc2626; text-decoration: none; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .content { padding: 20px; }
+            .inventory-item { flex-direction: column; align-items: flex-start; }
+            .stock-info { align-items: flex-start; margin-top: 10px; }
+            .button { display: block; margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚠️ Low Stock Alert</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Immediate attention required for inventory management</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{pharmacy.name}}</strong> Team,</p>
+            
+            <div class="alert-banner">
+                <h2 style="margin: 0; color: #dc2626;">🚨 INVENTORY ALERT</h2>
+                <div class="alert-level critical">CRITICAL STOCK LEVELS DETECTED</div>
+                <p style="margin: 10px 0 0 0;">Multiple medications are running low and require immediate restocking</p>
+            </div>
+            
+            <p>Our system has detected critically low stock levels for several medications in your inventory. Immediate action is required to prevent stockouts and ensure continuous patient care.</p>
+            
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <div class="stat-number critical">{{inventory.criticalCount}}</div>
+                    <div>Critical (≤5 units)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number warning">{{inventory.warningCount}}</div>
+                    <div>Warning (≤10 units)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number low">{{inventory.lowCount}}</div>
+                    <div>Low (≤20 units)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #059669;">{{inventory.totalItems}}</div>
+                    <div>Total Items Affected</div>
+                </div>
+            </div>
+            
+            <div class="inventory-list">
+                <h3 style="margin-top: 0; color: #374151;">📦 Items Requiring Immediate Attention</h3>
+                
+                {{#each inventory.criticalItems}}
+                <div class="inventory-item critical">
+                    <div>
+                        <strong>{{name}}</strong><br>
+                        <span style="color: #6b7280; font-size: 14px;">
+                            {{dosage}} | NDC: {{ndc}}
+                        </span>
+                        {{#if expiryDate}}
+                        <br><span style="color: #dc2626; font-size: 12px;">Expires: {{expiryDate}}</span>
+                        {{/if}}
+                    </div>
+                    <div class="stock-info">
+                        <div class="current-stock critical">{{currentStock}} units</div>
+                        <div style="font-size: 12px; color: #6b7280;">Min: {{minStock}}</div>
+                        {{#if lastOrdered}}
+                        <div style="font-size: 12px; color: #6b7280;">Last ordered: {{lastOrdered}}</div>
+                        {{/if}}
+                    </div>
+                </div>
+                {{/each}}
+                
+                {{#each inventory.warningItems}}
+                <div class="inventory-item warning">
+                    <div>
+                        <strong>{{name}}</strong><br>
+                        <span style="color: #6b7280; font-size: 14px;">
+                            {{dosage}} | NDC: {{ndc}}
+                        </span>
+                        {{#if expiryDate}}
+                        <br><span style="color: #f59e0b; font-size: 12px;">Expires: {{expiryDate}}</span>
+                        {{/if}}
+                    </div>
+                    <div class="stock-info">
+                        <div class="current-stock warning">{{currentStock}} units</div>
+                        <div style="font-size: 12px; color: #6b7280;">Min: {{minStock}}</div>
+                        {{#if lastOrdered}}
+                        <div style="font-size: 12px; color: #6b7280;">Last ordered: {{lastOrdered}}</div>
+                        {{/if}}
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            
+            <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>📊 Impact Analysis:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li><strong>{{inventory.pendingOrders}}</strong> pending patient orders may be affected</li>
+                    <li><strong>{{inventory.avgDailyUsage}}</strong> average daily usage for critical items</li>
+                    <li><strong>{{inventory.estimatedStockoutDays}}</strong> days until potential stockout</li>
+                    <li><strong>${{inventory.estimatedLostRevenue}}</strong> potential lost revenue if not restocked</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{appUrl}}/pharmacy/inventory/reorder" class="button">
+                    🛒 Quick Reorder
+                </a>
+                <a href="{{appUrl}}/pharmacy/inventory" class="button secondary">
+                    📋 Manage Inventory
+                </a>
+            </div>
+            
+            <div style="background: #eff6ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>🔄 Recommended Actions:</strong>
+                <ol style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li><strong>Immediate:</strong> Place emergency orders for critical items (≤5 units)</li>
+                    <li><strong>Today:</strong> Contact suppliers for expedited delivery options</li>
+                    <li><strong>This Week:</strong> Review and adjust minimum stock levels</li>
+                    <li><strong>Ongoing:</strong> Set up automated reorder points to prevent future stockouts</li>
+                </ol>
+            </div>
+            
+            {{#if inventory.supplierContacts}}
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>📞 Supplier Quick Contacts:</strong><br>
+                {{#each inventory.supplierContacts}}
+                <div style="margin: 8px 0;">
+                    <strong>{{name}}:</strong> {{phone}} | {{email}}
+                    {{#if emergencyContact}}
+                    <br><em style="color: #dc2626;">Emergency: {{emergencyContact}}</em>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+            
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>⚠️ Important Reminders:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>Patient safety depends on maintaining adequate stock levels</li>
+                    <li>Stockouts can result in lost revenue and customer dissatisfaction</li>
+                    <li>Some medications may have longer lead times - order early</li>
+                    <li>Check expiry dates when placing orders to minimize waste</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top: 30px;">This alert was generated automatically based on your current inventory levels and usage patterns. For assistance with inventory management or supplier contacts, please reach out to our support team.</p>
+        </div>
+        
+        <div class="footer">
+            <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+            <p>
+                <a href="{{appUrl}}/pharmacy/inventory">Inventory Management</a> | 
+                <a href="{{appUrl}}/pharmacy/reports">Inventory Reports</a> | 
+                <a href="{{appUrl}}/pharmacy/settings/alerts">Alert Settings</a> | 
+                <a href="{{supportEmail}}">{{supportEmail}}</a>
+            </p>
+            <p style="margin-top: 10px; font-size: 12px;">
+                Alert generated on {{currentDateTime}} | Next check: {{nextAlertCheck}}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

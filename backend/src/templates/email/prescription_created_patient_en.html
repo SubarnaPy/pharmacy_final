@@ -1,0 +1,151 @@
+<!-- SUBJECT: Your Prescription is Ready for Pharmacy Review -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Your Prescription is Ready for Pharmacy Review</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f8fafc;
+        }
+        .container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { 
+            background: linear-gradient(135deg, #059669 0%, #047857 100%); 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center; 
+        }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 30px; }
+        .prescription-card {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .prescription-details {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .prescription-details:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #374151; }
+        .value { color: #6b7280; }
+        .button { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #059669 0%, #047857 100%); 
+            color: white; 
+            padding: 14px 28px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin: 20px 0; 
+            font-weight: 600;
+            text-align: center;
+        }
+        .button:hover { background: linear-gradient(135deg, #047857 0%, #065f46 100%); }
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px; 
+            color: #6b7280; 
+        }
+        .footer a { color: #059669; text-decoration: none; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .content { padding: 20px; }
+            .prescription-details { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Prescription Created</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Your prescription is ready for pharmacy review</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{patient.firstName}}</strong>,</p>
+            
+            <p>Dr. {{doctor.firstName}} {{doctor.lastName}} has created a new prescription for you. The prescription details are below:</p>
+            
+            <div class="prescription-card">
+                <h3 style="margin-top: 0; color: #059669;">📋 Prescription Details</h3>
+                
+                <div class="prescription-details">
+                    <span class="label">Prescription ID:</span>
+                    <span class="value">#{{prescription.id}}</span>
+                </div>
+                
+                <div class="prescription-details">
+                    <span class="label">Doctor:</span>
+                    <span class="value">Dr. {{doctor.firstName}} {{doctor.lastName}}</span>
+                </div>
+                
+                <div class="prescription-details">
+                    <span class="label">Date Created:</span>
+                    <span class="value">{{prescription.createdAt}}</span>
+                </div>
+                
+                <div class="prescription-details">
+                    <span class="label">Medications:</span>
+                    <span class="value">{{prescription.medicationCount}} medication(s)</span>
+                </div>
+                
+                {{#if prescription.notes}}
+                <div class="prescription-details">
+                    <span class="label">Doctor's Notes:</span>
+                    <span class="value">{{prescription.notes}}</span>
+                </div>
+                {{/if}}
+            </div>
+            
+            <div class="info-box">
+                <strong>📍 Next Steps:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>Your prescription has been sent to nearby pharmacies</li>
+                    <li>You'll receive notifications when pharmacies respond with quotes</li>
+                    <li>You can compare prices and select your preferred pharmacy</li>
+                    <li>Track your order status in real-time</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="{{appUrl}}/prescriptions/{{prescription.id}}" class="button">
+                    View Prescription Details
+                </a>
+            </div>
+            
+            <p style="margin-top: 30px;">If you have any questions about your prescription, please contact Dr. {{doctor.lastName}}'s office or our support team.</p>
+        </div>
+        
+        <div class="footer">
+            <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+            <p>
+                <a href="{{appUrl}}/prescriptions">Manage Prescriptions</a> | 
+                <a href="{{appUrl}}/support">Contact Support</a> | 
+                <a href="{{supportEmail}}">{{supportEmail}}</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

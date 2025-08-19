@@ -1,0 +1,263 @@
+<!-- SUBJECT: Appointment Reminder - Tomorrow at {{appointment.time}} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Appointment Reminder - Tomorrow at {{appointment.time}}</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f8fafc;
+        }
+        .container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center; 
+        }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 30px; }
+        .appointment-card {
+            background: #eff6ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .appointment-time {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1d4ed8;
+            margin: 10px 0;
+        }
+        .appointment-date {
+            font-size: 18px;
+            color: #374151;
+            margin: 5px 0;
+        }
+        .appointment-details {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .appointment-details:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #374151; }
+        .value { color: #6b7280; }
+        .button { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+            color: white; 
+            padding: 14px 28px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin: 10px 5px; 
+            font-weight: 600;
+            text-align: center;
+        }
+        .button.secondary { 
+            background: #6b7280; 
+        }
+        .button.danger { 
+            background: #dc2626; 
+        }
+        .preparation-checklist {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        .checklist-item input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        .location-info {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px; 
+            color: #6b7280; 
+        }
+        .footer a { color: #3b82f6; text-decoration: none; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .content { padding: 20px; }
+            .appointment-details { flex-direction: column; }
+            .button { display: block; margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⏰ Appointment Reminder</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Don't forget your upcoming appointment</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{patient.firstName}}</strong>,</p>
+            
+            <p>This is a friendly reminder about your upcoming appointment with Dr. {{doctor.firstName}} {{doctor.lastName}}.</p>
+            
+            <div class="appointment-card">
+                <div class="appointment-time">{{appointment.time}}</div>
+                <div class="appointment-date">{{appointment.date}}</div>
+                <div style="margin-top: 15px; color: #6b7280;">
+                    <strong>{{appointment.type}}</strong>
+                    {{#if appointment.duration}}
+                    <br>Duration: {{appointment.duration}} minutes
+                    {{/if}}
+                </div>
+            </div>
+            
+            <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #374151;">👨‍⚕️ Appointment Details</h3>
+                
+                <div class="appointment-details">
+                    <span class="label">Doctor:</span>
+                    <span class="value">Dr. {{doctor.firstName}} {{doctor.lastName}}</span>
+                </div>
+                
+                <div class="appointment-details">
+                    <span class="label">Specialty:</span>
+                    <span class="value">{{doctor.specialty}}</span>
+                </div>
+                
+                <div class="appointment-details">
+                    <span class="label">Appointment Type:</span>
+                    <span class="value">{{appointment.type}}</span>
+                </div>
+                
+                {{#if appointment.consultationMode}}
+                <div class="appointment-details">
+                    <span class="label">Consultation Mode:</span>
+                    <span class="value">{{appointment.consultationMode}}</span>
+                </div>
+                {{/if}}
+                
+                {{#if appointment.reason}}
+                <div class="appointment-details">
+                    <span class="label">Reason for Visit:</span>
+                    <span class="value">{{appointment.reason}}</span>
+                </div>
+                {{/if}}
+            </div>
+            
+            {{#if appointment.consultationMode === 'in-person'}}
+            <div class="location-info">
+                <strong>📍 Location Information:</strong><br>
+                <strong>{{doctor.clinic.name}}</strong><br>
+                {{doctor.clinic.address.street}}<br>
+                {{doctor.clinic.address.city}}, {{doctor.clinic.address.state}} {{doctor.clinic.address.zipCode}}<br>
+                <strong>Phone:</strong> {{doctor.clinic.phone}}<br>
+                {{#if doctor.clinic.parkingInfo}}
+                <strong>Parking:</strong> {{doctor.clinic.parkingInfo}}
+                {{/if}}
+            </div>
+            {{/if}}
+            
+            {{#if appointment.consultationMode === 'video'}}
+            <div style="background: #eff6ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>💻 Video Consultation:</strong><br>
+                Your appointment will be conducted via video call. You'll receive a link to join the consultation 15 minutes before your appointment time.
+                <br><br>
+                <strong>Technical Requirements:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>Stable internet connection</li>
+                    <li>Camera and microphone enabled</li>
+                    <li>Quiet, private space</li>
+                    <li>Good lighting</li>
+                </ul>
+            </div>
+            {{/if}}
+            
+            <div class="preparation-checklist">
+                <h4 style="margin-top: 0; color: #059669;">✅ Preparation Checklist</h4>
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>Bring a valid ID and insurance card</span>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>Arrive 15 minutes early for check-in</span>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>Bring list of current medications</span>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>Prepare questions you want to ask</span>
+                </div>
+                {{#if appointment.specialInstructions}}
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>{{appointment.specialInstructions}}</span>
+                </div>
+                {{/if}}
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                {{#if appointment.consultationMode === 'video'}}
+                <a href="{{appUrl}}/appointments/{{appointment.id}}/join" class="button">
+                    🎥 Join Video Call
+                </a>
+                {{/if}}
+                <a href="{{appUrl}}/appointments/{{appointment.id}}" class="button secondary">
+                    📅 View Appointment
+                </a>
+                <a href="{{appUrl}}/appointments/{{appointment.id}}/reschedule" class="button secondary">
+                    📝 Reschedule
+                </a>
+                <a href="{{appUrl}}/appointments/{{appointment.id}}/cancel" class="button danger">
+                    ❌ Cancel
+                </a>
+            </div>
+            
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>⚠️ Important:</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>Please arrive on time to avoid delays</li>
+                    <li>If you need to cancel, please do so at least 24 hours in advance</li>
+                    <li>Late cancellations may incur a fee</li>
+                    <li>Contact the clinic directly for urgent matters</li>
+                </ul>
+            </div>
+            
+            <p style="margin-top: 30px;">If you have any questions or need to make changes to your appointment, please contact Dr. {{doctor.lastName}}'s office at {{doctor.clinic.phone}} or our support team.</p>
+        </div>
+        
+        <div class="footer">
+            <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+            <p>
+                <a href="{{appUrl}}/appointments">My Appointments</a> | 
+                <a href="{{appUrl}}/doctors/{{doctor.id}}">Doctor Profile</a> | 
+                <a href="{{supportEmail}}">{{supportEmail}}</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

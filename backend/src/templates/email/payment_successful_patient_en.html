@@ -1,0 +1,321 @@
+<!-- SUBJECT: Payment Confirmed - Receipt for Order #{{order.id}} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Payment Confirmed - Receipt for Order #{{order.id}}</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f8fafc;
+        }
+        .container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { 
+            background: linear-gradient(135deg, #059669 0%, #047857 100%); 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center; 
+        }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 30px; }
+        .receipt-header {
+            text-align: center;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .receipt-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #059669;
+            margin: 10px 0;
+        }
+        .payment-details {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #374151; }
+        .value { color: #6b7280; }
+        .button { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #059669 0%, #047857 100%); 
+            color: white; 
+            padding: 14px 28px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin: 10px 5px; 
+            font-weight: 600;
+            text-align: center;
+        }
+        .button.secondary { 
+            background: #6b7280; 
+        }
+        .medication-list {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 15px 0;
+        }
+        .medication-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .medication-item:last-child { border-bottom: none; }
+        .price-breakdown {
+            background: #eff6ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+        }
+        .price-row.total {
+            font-weight: 700;
+            font-size: 18px;
+            border-top: 2px solid #3b82f6;
+            padding-top: 8px;
+            margin-top: 12px;
+            color: #059669;
+        }
+        .payment-method {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .success-badge {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px; 
+            color: #6b7280; 
+        }
+        .footer a { color: #059669; text-decoration: none; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .content { padding: 20px; }
+            .detail-row, .medication-item, .price-row { flex-direction: column; text-align: left; }
+            .button { display: block; margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💳 Payment Successful!</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Your payment has been processed successfully</p>
+        </div>
+        
+        <div class="content">
+            <div class="receipt-header">
+                <h2 style="margin: 0; color: #374151;">Payment Receipt</h2>
+                <div class="receipt-number">#{{payment.receiptNumber}}</div>
+                <div class="success-badge">✅ PAID</div>
+                <p style="margin: 10px 0 0 0; color: #6b7280;">{{payment.processedAt}}</p>
+            </div>
+            
+            <p>Hello <strong>{{patient.firstName}}</strong>,</p>
+            
+            <p>Thank you for your payment! Your transaction has been processed successfully and your order is now confirmed.</p>
+            
+            <div class="payment-details">
+                <h3 style="margin-top: 0; color: #059669;">💰 Payment Information</h3>
+                
+                <div class="detail-row">
+                    <span class="label">Transaction ID:</span>
+                    <span class="value">{{payment.transactionId}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Order Number:</span>
+                    <span class="value">#{{order.id}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Payment Date:</span>
+                    <span class="value">{{payment.processedAt}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Payment Method:</span>
+                    <span class="value">{{payment.method}} ending in {{payment.last4}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Amount Paid:</span>
+                    <span class="value" style="font-weight: 600; color: #059669;">${{payment.amount}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Status:</span>
+                    <span class="value" style="color: #059669; font-weight: 600;">Completed</span>
+                </div>
+            </div>
+            
+            <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #374151;">🏪 Order Details</h3>
+                
+                <div class="detail-row">
+                    <span class="label">Pharmacy:</span>
+                    <span class="value">{{pharmacy.name}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Pharmacy Address:</span>
+                    <span class="value">{{pharmacy.address.street}}, {{pharmacy.address.city}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Delivery Method:</span>
+                    <span class="value">{{order.deliveryMethod}}</span>
+                </div>
+                
+                {{#if order.deliveryAddress}}
+                <div class="detail-row">
+                    <span class="label">Delivery Address:</span>
+                    <span class="value">{{order.deliveryAddress.street}}, {{order.deliveryAddress.city}}</span>
+                </div>
+                {{/if}}
+            </div>
+            
+            <div class="medication-list">
+                <h4 style="margin-top: 0; color: #374151;">💊 Medications Ordered</h4>
+                {{#each order.medications}}
+                <div class="medication-item">
+                    <div>
+                        <strong>{{name}}</strong><br>
+                        <span style="color: #6b7280; font-size: 14px;">
+                            {{dosage}} | Qty: {{quantity}}
+                        </span>
+                    </div>
+                    <div style="text-align: right;">
+                        <strong>${{price}}</strong>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            
+            <div class="price-breakdown">
+                <h4 style="margin-top: 0; color: #3b82f6;">📊 Payment Breakdown</h4>
+                <div class="price-row">
+                    <span>Medications Subtotal:</span>
+                    <span>${{order.subtotal}}</span>
+                </div>
+                {{#if order.deliveryFee}}
+                <div class="price-row">
+                    <span>Delivery Fee:</span>
+                    <span>${{order.deliveryFee}}</span>
+                </div>
+                {{/if}}
+                {{#if order.tax}}
+                <div class="price-row">
+                    <span>Tax:</span>
+                    <span>${{order.tax}}</span>
+                </div>
+                {{/if}}
+                {{#if order.discount}}
+                <div class="price-row" style="color: #059669;">
+                    <span>Discount Applied:</span>
+                    <span>-${{order.discount}}</span>
+                </div>
+                {{/if}}
+                {{#if payment.processingFee}}
+                <div class="price-row">
+                    <span>Processing Fee:</span>
+                    <span>${{payment.processingFee}}</span>
+                </div>
+                {{/if}}
+                <div class="price-row total">
+                    <span>Total Paid:</span>
+                    <span>${{payment.amount}}</span>
+                </div>
+            </div>
+            
+            {{#if payment.method === 'insurance'}}
+            <div style="background: #eff6ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>🏥 Insurance Information:</strong><br>
+                <strong>Provider:</strong> {{payment.insurance.provider}}<br>
+                <strong>Policy Number:</strong> {{payment.insurance.policyNumber}}<br>
+                <strong>Copay:</strong> ${{payment.insurance.copay}}<br>
+                <strong>Coverage:</strong> {{payment.insurance.coveragePercentage}}%
+            </div>
+            {{/if}}
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{appUrl}}/orders/{{order.id}}" class="button">
+                    📦 Track Your Order
+                </a>
+                <a href="{{appUrl}}/receipts/{{payment.receiptNumber}}" class="button secondary">
+                    📄 Download Receipt
+                </a>
+            </div>
+            
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>✅ What's Next?</strong>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    <li>Your order is now being prepared by {{pharmacy.name}}</li>
+                    <li>You'll receive updates as your order progresses</li>
+                    <li>{{#if order.deliveryMethod === 'delivery'}}Your medications will be delivered to your address{{else}}You'll be notified when ready for pickup{{/if}}</li>
+                    <li>Keep this receipt for your records</li>
+                </ul>
+            </div>
+            
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>🔒 Security Notice:</strong><br>
+                This payment was processed securely. If you did not authorize this transaction, please contact our support team immediately at {{supportEmail}} or {{supportPhone}}.
+            </div>
+            
+            <p style="margin-top: 30px;">Thank you for choosing {{appName}} for your healthcare needs. If you have any questions about your payment or order, please don't hesitate to contact us.</p>
+        </div>
+        
+        <div class="footer">
+            <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+            <p>
+                <a href="{{appUrl}}/orders">My Orders</a> | 
+                <a href="{{appUrl}}/receipts">Payment History</a> | 
+                <a href="{{appUrl}}/support">Contact Support</a> | 
+                <a href="{{supportEmail}}">{{supportEmail}}</a>
+            </p>
+            <p style="margin-top: 10px; font-size: 12px;">
+                This is an automated receipt. Please save this email for your records.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

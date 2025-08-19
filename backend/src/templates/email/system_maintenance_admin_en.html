@@ -1,0 +1,296 @@
+<!-- SUBJECT: Scheduled System Maintenance - {{maintenance.date}} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scheduled System Maintenance - {{maintenance.date}}</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f8fafc;
+        }
+        .container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { 
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center; 
+        }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 30px; }
+        .maintenance-card {
+            background: #fffbeb;
+            border: 1px solid #fed7aa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .detail-row:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #374151; }
+        .value { color: #6b7280; }
+        .impact-list {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .checklist {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            margin: 8px 0;
+        }
+        .checklist-item input[type="checkbox"] {
+            margin-right: 10px;
+            margin-top: 4px;
+            transform: scale(1.2);
+        }
+        .button { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+            color: white; 
+            padding: 14px 28px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin: 10px 5px; 
+            font-weight: 600;
+            text-align: center;
+        }
+        .button.secondary { 
+            background: #6b7280; 
+        }
+        .timeline {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px;
+            border-left: 4px solid #f59e0b;
+            background: white;
+            border-radius: 0 6px 6px 0;
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px; 
+            color: #6b7280; 
+        }
+        .footer a { color: #f59e0b; text-decoration: none; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .content { padding: 20px; }
+            .detail-row { flex-direction: column; }
+            .button { display: block; margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Scheduled System Maintenance</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Important system updates and improvements</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{admin.firstName}}</strong>,</p>
+            
+            <p>This is an important notification regarding scheduled system maintenance for {{appName}}. Please review the details below and take necessary actions to ensure smooth operations.</p>
+            
+            <div class="maintenance-card">
+                <h3 style="margin-top: 0; color: #d97706;">📅 Maintenance Schedule</h3>
+                
+                <div class="detail-row">
+                    <span class="label">Maintenance Date:</span>
+                    <span class="value">{{maintenance.date}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Start Time:</span>
+                    <span class="value">{{maintenance.startTime}} {{maintenance.timezone}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">End Time:</span>
+                    <span class="value">{{maintenance.endTime}} {{maintenance.timezone}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Duration:</span>
+                    <span class="value">{{maintenance.duration}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Maintenance Type:</span>
+                    <span class="value">{{maintenance.type}}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="label">Priority:</span>
+                    <span class="value" style="font-weight: 600; color: {{#if maintenance.critical}}#dc2626{{else}}#f59e0b{{/if}};">
+                        {{maintenance.priority}}
+                    </span>
+                </div>
+            </div>
+            
+            <div style="background: #eff6ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: #1d4ed8;">🔍 Maintenance Details</h4>
+                <p><strong>Purpose:</strong> {{maintenance.purpose}}</p>
+                <p><strong>Description:</strong> {{maintenance.description}}</p>
+                {{#if maintenance.components}}
+                <p><strong>Affected Components:</strong></p>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    {{#each maintenance.components}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+                {{/if}}
+            </div>
+            
+            <div class="impact-list">
+                <h4 style="margin-top: 0; color: #dc2626;">⚠️ Expected Impact</h4>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                    {{#each maintenance.impacts}}
+                    <li style="margin: 6px 0;">{{this}}</li>
+                    {{/each}}
+                </ul>
+                
+                {{#if maintenance.critical}}
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 12px; margin: 16px 0;">
+                    <strong style="color: #dc2626;">🚨 CRITICAL MAINTENANCE:</strong><br>
+                    This maintenance may cause significant service disruption. Please ensure all critical operations are completed before the maintenance window.
+                </div>
+                {{/if}}
+            </div>
+            
+            <div class="timeline">
+                <h4 style="margin-top: 0; color: #374151;">📋 Maintenance Timeline</h4>
+                
+                {{#each maintenance.timeline}}
+                <div class="timeline-item">
+                    <div style="margin-right: 12px; font-weight: 600; color: #f59e0b;">{{time}}</div>
+                    <div>{{description}}</div>
+                </div>
+                {{/each}}
+            </div>
+            
+            <div class="checklist">
+                <h4 style="margin-top: 0; color: #059669;">✅ Pre-Maintenance Checklist</h4>
+                <p style="margin: 8px 0 16px 0;">Please complete the following tasks before maintenance begins:</p>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>Notify all users about the scheduled maintenance</span>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>Complete any critical data backups</span>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>Verify monitoring systems are active</span>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>Prepare rollback procedures if needed</span>
+                </div>
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>Coordinate with on-call support team</span>
+                </div>
+                {{#each maintenance.customChecklist}}
+                <div class="checklist-item">
+                    <input type="checkbox" disabled>
+                    <span>{{this}}</span>
+                </div>
+                {{/each}}
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{appUrl}}/admin/maintenance/{{maintenance.id}}" class="button">
+                    📊 View Maintenance Details
+                </a>
+                <a href="{{appUrl}}/admin/system-status" class="button secondary">
+                    🔍 System Status
+                </a>
+            </div>
+            
+            <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: #92400e;">📞 Emergency Contacts</h4>
+                <p style="margin: 8px 0;">If you encounter any issues during maintenance:</p>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    <li><strong>Primary Contact:</strong> {{maintenance.contacts.primary.name}} - {{maintenance.contacts.primary.phone}}</li>
+                    <li><strong>Secondary Contact:</strong> {{maintenance.contacts.secondary.name}} - {{maintenance.contacts.secondary.phone}}</li>
+                    <li><strong>Emergency Escalation:</strong> {{maintenance.contacts.emergency.phone}}</li>
+                </ul>
+            </div>
+            
+            {{#if maintenance.postMaintenanceActions}}
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: #059669;">🔄 Post-Maintenance Actions</h4>
+                <p style="margin: 8px 0;">After maintenance is complete:</p>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    {{#each maintenance.postMaintenanceActions}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}}
+            
+            <div style="background: #eff6ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: #1d4ed8;">📈 Expected Benefits</h4>
+                <p style="margin: 8px 0;">This maintenance will provide:</p>
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    {{#each maintenance.benefits}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            
+            <p style="margin-top: 30px;">Thank you for your attention to this maintenance notification. We appreciate your cooperation in ensuring a smooth maintenance process.</p>
+            
+            <p style="font-size: 14px; color: #6b7280;">
+                <strong>Note:</strong> This maintenance has been scheduled during low-usage hours to minimize impact on users. All times are in {{maintenance.timezone}}.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+            <p>
+                <a href="{{appUrl}}/admin/maintenance">Maintenance Schedule</a> | 
+                <a href="{{appUrl}}/admin/system-status">System Status</a> | 
+                <a href="{{appUrl}}/admin/alerts">System Alerts</a>
+            </p>
+            <p style="margin-top: 10px; font-size: 12px;">
+                Maintenance ID: {{maintenance.id}} | Scheduled by: {{maintenance.scheduledBy}}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

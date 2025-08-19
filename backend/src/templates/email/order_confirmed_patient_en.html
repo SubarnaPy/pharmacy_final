@@ -1,0 +1,300 @@
+<!-- SUBJECT: Order Confirmed - Your Medications are Being Prepared -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Order Confirmed - Your Medications are Being Prepared</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f8fafc;
+        }
+        .container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .header { 
+            background: linear-gradient(135deg, #059669 0%, #047857 100%); 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center; 
+        }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 30px; }
+        .order-summary {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .order-details {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .order-details:last-child { border-bottom: none; }
+        .label { font-weight: 600; color: #374151; }
+        .value { color: #6b7280; }
+        .button { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #059669 0%, #047857 100%); 
+            color: white; 
+            padding: 14px 28px; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin: 10px 5px; 
+            font-weight: 600;
+            text-align: center;
+        }
+        .button.secondary { 
+            background: #6b7280; 
+        }
+        .status-timeline {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status-step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .status-step.active {
+            background: #dcfce7;
+            border-left: 4px solid #22c55e;
+        }
+        .status-step.pending {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+        }
+        .status-step.upcoming {
+            background: #f1f5f9;
+            border-left: 4px solid #cbd5e1;
+        }
+        .medication-list {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 15px 0;
+        }
+        .medication-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .medication-item:last-child { border-bottom: none; }
+        .price-breakdown {
+            background: #eff6ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+        }
+        .price-row.total {
+            font-weight: 600;
+            font-size: 18px;
+            border-top: 2px solid #3b82f6;
+            padding-top: 8px;
+            margin-top: 12px;
+        }
+        .footer { 
+            text-align: center; 
+            margin-top: 30px; 
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px; 
+            color: #6b7280; 
+        }
+        .footer a { color: #059669; text-decoration: none; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .content { padding: 20px; }
+            .order-details, .medication-item, .price-row { flex-direction: column; text-align: left; }
+            .button { display: block; margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Order Confirmed!</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Your medications are being prepared</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{patient.firstName}}</strong>,</p>
+            
+            <p>Great news! Your order has been confirmed and {{pharmacy.name}} is now preparing your medications.</p>
+            
+            <div class="order-summary">
+                <h3 style="margin-top: 0; color: #059669;">📦 Order Summary</h3>
+                
+                <div class="order-details">
+                    <span class="label">Order Number:</span>
+                    <span class="value">#{{order.id}}</span>
+                </div>
+                
+                <div class="order-details">
+                    <span class="label">Pharmacy:</span>
+                    <span class="value">{{pharmacy.name}}</span>
+                </div>
+                
+                <div class="order-details">
+                    <span class="label">Order Date:</span>
+                    <span class="value">{{order.createdAt}}</span>
+                </div>
+                
+                <div class="order-details">
+                    <span class="label">Estimated Ready Time:</span>
+                    <span class="value">{{order.estimatedReadyTime}}</span>
+                </div>
+                
+                <div class="order-details">
+                    <span class="label">Delivery Method:</span>
+                    <span class="value">{{order.deliveryMethod}}</span>
+                </div>
+            </div>
+            
+            <div class="medication-list">
+                <h4 style="margin-top: 0; color: #374151;">💊 Your Medications</h4>
+                {{#each order.medications}}
+                <div class="medication-item">
+                    <div>
+                        <strong>{{name}}</strong><br>
+                        <span style="color: #6b7280; font-size: 14px;">
+                            {{dosage}} | Qty: {{quantity}}
+                        </span>
+                    </div>
+                    <div style="text-align: right;">
+                        <strong>${{price}}</strong>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+            
+            <div class="price-breakdown">
+                <h4 style="margin-top: 0; color: #3b82f6;">💰 Price Breakdown</h4>
+                <div class="price-row">
+                    <span>Medications Subtotal:</span>
+                    <span>${{order.subtotal}}</span>
+                </div>
+                {{#if order.deliveryFee}}
+                <div class="price-row">
+                    <span>Delivery Fee:</span>
+                    <span>${{order.deliveryFee}}</span>
+                </div>
+                {{/if}}
+                {{#if order.tax}}
+                <div class="price-row">
+                    <span>Tax:</span>
+                    <span>${{order.tax}}</span>
+                </div>
+                {{/if}}
+                {{#if order.discount}}
+                <div class="price-row" style="color: #059669;">
+                    <span>Discount:</span>
+                    <span>-${{order.discount}}</span>
+                </div>
+                {{/if}}
+                <div class="price-row total">
+                    <span>Total Amount:</span>
+                    <span>${{order.total}}</span>
+                </div>
+            </div>
+            
+            <div class="status-timeline">
+                <h4 style="margin-top: 0; color: #374151;">📋 Order Status</h4>
+                
+                <div class="status-step active">
+                    <div style="margin-right: 12px;">✅</div>
+                    <div>
+                        <strong>Order Confirmed</strong><br>
+                        <small style="color: #6b7280;">{{order.confirmedAt}}</small>
+                    </div>
+                </div>
+                
+                <div class="status-step pending">
+                    <div style="margin-right: 12px;">⏳</div>
+                    <div>
+                        <strong>Preparing Medications</strong><br>
+                        <small style="color: #6b7280;">In progress - Est. {{order.estimatedReadyTime}}</small>
+                    </div>
+                </div>
+                
+                <div class="status-step upcoming">
+                    <div style="margin-right: 12px;">📦</div>
+                    <div>
+                        <strong>Ready for {{order.deliveryMethod}}</strong><br>
+                        <small style="color: #6b7280;">You'll be notified when ready</small>
+                    </div>
+                </div>
+                
+                {{#if order.deliveryMethod === 'delivery'}}
+                <div class="status-step upcoming">
+                    <div style="margin-right: 12px;">🚚</div>
+                    <div>
+                        <strong>Out for Delivery</strong><br>
+                        <small style="color: #6b7280;">Track your delivery in real-time</small>
+                    </div>
+                </div>
+                {{/if}}
+                
+                <div class="status-step upcoming">
+                    <div style="margin-right: 12px;">🎉</div>
+                    <div>
+                        <strong>{{#if order.deliveryMethod === 'delivery'}}Delivered{{else}}Picked Up{{/if}}</strong><br>
+                        <small style="color: #6b7280;">Order complete</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{appUrl}}/orders/{{order.id}}" class="button">
+                    📱 Track Your Order
+                </a>
+                <a href="{{appUrl}}/orders/{{order.id}}/receipt" class="button secondary">
+                    📄 View Receipt
+                </a>
+            </div>
+            
+            {{#if order.deliveryMethod === 'pickup'}}
+            <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <strong>📍 Pickup Information:</strong><br>
+                <strong>{{pharmacy.name}}</strong><br>
+                {{pharmacy.address.street}}<br>
+                {{pharmacy.address.city}}, {{pharmacy.address.state}} {{pharmacy.address.zipCode}}<br>
+                <strong>Phone:</strong> {{pharmacy.phone}}<br>
+                <strong>Hours:</strong> {{pharmacy.hours}}
+            </div>
+            {{/if}}
+            
+            <p style="margin-top: 30px;">We'll send you updates as your order progresses. If you have any questions, please contact {{pharmacy.name}} directly or our support team.</p>
+        </div>
+        
+        <div class="footer">
+            <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+            <p>
+                <a href="{{appUrl}}/orders">My Orders</a> | 
+                <a href="{{appUrl}}/support">Contact Support</a> | 
+                <a href="{{supportEmail}}">{{supportEmail}}</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

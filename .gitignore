@@ -1,0 +1,44 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors/IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Env files (root and any subfolders like client/ and server/)
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build artifacts
+dist/
+build/
+**/dist/
+**/build/
+.cache/
+**/.cache/
+coverage/
+**/coverage/
+.eslintcache
+*.tsbuildinfo
+.parcel-cache/
+.storybook/
+
+# Temporary
+*.pid
+*.pid.lock

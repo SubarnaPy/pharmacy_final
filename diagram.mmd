@@ -1,0 +1,150 @@
+flowchart TD
+    A["<b>CLIENT</b><br/>🏥 End User"] --> B["<b>HEALTHCARE PORTAL</b><br/>🌐 Main Platform"]
+    B --> C["<b>PHARMACY PORTAL</b><br/>💊 Pharmacy Network"]
+    B --> D1["<b>DOCTOR PORTAL</b><br/>👨‍⚕ Medical Professionals"]
+    B --> E1["<b>SPECIALIST PORTAL</b><br/>🩺 Specialist Network"]
+    %% Doctor Appointment Booking System
+    A --> F1["<b>BOOK DOCTOR<br/>APPOINTMENT</b><br/>📅 Schedule Medical Visit"]
+    F1 --> G1["<b>SELECT DOCTOR<br/>TYPE</b><br/>👩‍⚕ General/Specialist Choice"]
+    G1 --> H1{"<b>DOCTOR TYPE<br/>SELECTION</b><br/>🔍 Medical Category"}
+    H1 -->|"<b>GENERAL</b>"| I1["<b>BROWSE GENERAL<br/>PRACTITIONERS</b><br/>👨‍⚕ Available GPs"]
+    H1 -->|"<b>SPECIALIST</b>"| J1["<b>SELECT SPECIALTY</b><br/>🩺 Medical Specialization"]
+    
+    J1 --> K1["<b>BROWSE SPECIALISTS</b><br/>🔍 Cardiology, Neurology, etc."]
+    I1 --> L1["<b>VIEW DOCTOR<br/>PROFILES</b><br/>📋 Experience & Reviews"]
+    K1 --> L1
+    L1 --> M1["<b>CHECK AVAILABILITY</b><br/>📅 Available Time Slots"]
+    M1 --> N1["<b>SELECT TIME SLOT</b><br/>⏰ Choose Appointment Time"]
+    N1 --> O1["<b>APPOINTMENT<br/>CONFIRMATION</b><br/>✅ Booking Confirmed"]
+    O1 --> P1["<b>SEND APPOINTMENT<br/>REMINDER</b><br/>🔔 Email/SMS Notification"]
+    
+    %% Virtual Consultation Option
+    N1 --> Q1{"<b>CONSULTATION<br/>TYPE?</b><br/>💻 In-person vs Virtual"}
+    Q1 -->|"<b>VIRTUAL</b>"| R1["<b>SCHEDULE VIDEO<br/>CONSULTATION</b><br/>📹 Online Meeting"]
+    Q1 -->|"<b>IN-PERSON</b>"| O1
+    R1 --> S1["<b>SEND MEETING<br/>LINK</b><br/>🔗 Video Conference Access"]
+    S1 --> O1
+    
+    %% Doctor-Patient Interaction
+    O1 --> T1["<b>DOCTOR CONSULTATION</b><br/>🩺 Medical Examination"]
+    T1 --> U1["<b>MEDICAL DIAGNOSIS</b><br/>🔬 Health Assessment"]
+    U1 --> V1{"<b>PRESCRIPTION<br/>NEEDED?</b><br/>💊 Medication Required"}
+    V1 -->|"<b>YES</b>"| W1["<b>DIGITAL PRESCRIPTION</b><br/>📝 Electronic Prescription"]
+    V1 -->|"<b>NO</b>"| X1["<b>HEALTH ADVICE<br/>ONLY</b><br/>💡 Lifestyle Recommendations"]
+    
+    %% Specialist Referral System
+    U1 --> Y1{"<b>SPECIALIST<br/>REFERRAL NEEDED?</b><br/>🏥 Advanced Care Required"}
+    Y1 -->|"<b>YES</b>"| Z1["<b>GENERATE REFERRAL</b><br/>📄 Specialist Recommendation"]
+    Y1 -->|"<b>NO</b>"| X1
+    
+    Z1 --> AA1["<b>SELECT SPECIALIST<br/>CATEGORY</b><br/>🩺 Medical Specialty"]
+    AA1 --> BB1["<b>RECOMMEND<br/>SPECIALISTS</b><br/>👩‍⚕ Qualified Professionals"]
+    BB1 --> CC1["<b>PATIENT CHOOSES<br/>SPECIALIST</b><br/>✅ Specialist Selection"]
+    CC1 --> DD1["<b>PRIORITY BOOKING</b><br/>⚡ Expedited Appointment"]
+    DD1 --> EE1["<b>SPECIALIST<br/>CONSULTATION</b><br/>🔬 Advanced Medical Care"]
+    
+    %% Medical Records Integration
+    T1 --> FF1["<b>UPDATE MEDICAL<br/>RECORDS</b><br/>📋 Patient History"]
+    EE1 --> FF1
+    W1 --> GG1["<b>LINK TO PHARMACY<br/>PORTAL</b><br/>🔗 Prescription Processing"]
+    GG1 --> D
+    
+    %% Patient Medical History
+    A --> HH1["<b>VIEW MEDICAL<br/>HISTORY</b><br/>📚 Past Records"]
+    HH1 --> II1["<b>APPOINTMENT<br/>HISTORY</b><br/>📅 Previous Visits"]
+    HH1 --> JJ1["<b>PRESCRIPTION<br/>HISTORY</b><br/>💊 Medication Records"]
+    HH1 --> KK1["<b>TEST RESULTS</b><br/>🧪 Lab Reports"]
+    
+    %% Follow-up Appointment System
+    X1 --> LL1{"<b>FOLLOW-UP<br/>REQUIRED?</b><br/>🔄 Continued Care"}
+    EE1 --> LL1
+    LL1 -->|"<b>YES</b>"| MM1["<b>SCHEDULE FOLLOW-UP</b><br/>📅 Future Appointment"]
+    MM1 --> N1
+    LL1 -->|"<b>NO</b>"| NN1["<b>CONSULTATION<br/>COMPLETED</b><br/>✅ Treatment Finished"]
+    %% Initial Prescription Upload Process (Alternative Path)
+    A --> D["<b>UPLOAD PRESCRIPTION</b><br/>📄 Submit Medical Document"]
+    D --> E{"<b>PRESCRIPTION<br/>VALIDATION</b><br/>✅ Check Document"}
+    E -->|"<b>VALID</b>"| F["<b>STORE IN DATABASE</b><br/>💾 Healthcare Portal Storage"]
+    E -->|"<b>INVALID</b>"| G["<b>REQUEST RE-UPLOAD</b><br/>❌ Error Details Provided"]
+    G --> D
+    
+    %% Pharmacy Notification System
+    F --> H["<b>IDENTIFY NEARBY<br/>PHARMACIES</b><br/>📍 Location-Based Search"]
+    H --> I["<b>SEND NOTIFICATIONS</b><br/>📢 Alert Pharmacy Network"]
+    I --> J["<b>PHARMACY 1</b><br/>🏪 Receives Notification"]
+    I --> K["<b>PHARMACY 2</b><br/>🏪 Receives Notification"]
+    I --> L["<b>PHARMACY N</b><br/>🏪 Receives Notification"]
+    
+    %% Pharmacy Response Process
+    J --> M{"<b>PHARMACY 1<br/>AVAILABLE?</b><br/>⏰ Service Status"}
+    K --> N{"<b>PHARMACY 2<br/>AVAILABLE?</b><br/>⏰ Service Status"}
+    L --> O{"<b>PHARMACY N<br/>AVAILABLE?</b><br/>⏰ Service Status"}
+    
+    M -->|"<b>YES</b>"| P["<b>PHARMACY 1<br/>CONTACTS CLIENT</b><br/>📞 Initial Contact"]
+    N -->|"<b>YES</b>"| Q["<b>PHARMACY 2<br/>CONTACTS CLIENT</b><br/>📞 Initial Contact"]
+    O -->|"<b>YES</b>"| R["<b>PHARMACY N<br/>CONTACTS CLIENT</b><br/>📞 Initial Contact"]
+    
+    M -->|"<b>NO</b>"| S["<b>MARK AS<br/>UNAVAILABLE</b><br/>⛔ Status Update"]
+    N -->|"<b>NO</b>"| S
+    O -->|"<b>NO</b>"| S
+    
+    %% Client-Pharmacy Communication
+    P --> T["<b>CLIENT-PHARMACY 1<br/>CHAT INTERFACE</b><br/>💬 Real-time Communication"]
+    Q --> U["<b>CLIENT-PHARMACY 2<br/>CHAT INTERFACE</b><br/>💬 Real-time Communication"]
+    R --> V["<b>CLIENT-PHARMACY N<br/>CHAT INTERFACE</b><br/>💬 Real-time Communication"]
+    
+    %% Discussion and Order Process
+    T --> W["<b>DISCUSS MEDICINE<br/>REQUIREMENTS</b><br/>🗣 Client Needs Discussion"]
+    U --> W
+    V --> W
+    
+    W --> X["<b>PHARMACY PROVIDES<br/>QUOTE & AVAILABILITY</b><br/>💰 Price & Stock Info"]
+    X --> Y{"<b>CLIENT APPROVES<br/>ORDER?</b><br/>✔ Order Confirmation"}
+    
+    Y -->|"<b>YES</b>"| Z["<b>CONFIRM ORDER</b><br/>✅ Order Accepted"]
+    Y -->|"<b>NO</b>"| AA["<b>CONTINUE DISCUSSION<br/>OR END CHAT</b><br/>🔄 Negotiation/Exit"]
+    
+    %% Order Fulfillment
+    Z --> BB["<b>PHARMACY PROCESSES<br/>ORDER</b><br/>⚙ Order Processing"]
+    BB --> CC["<b>PREPARE MEDICINE</b><br/>🧪 Medicine Preparation"]
+    CC --> DD["<b>DELIVERY/PICKUP<br/>ARRANGEMENT</b><br/>🚚 Logistics Setup"]
+    DD --> EE["<b>ORDER COMPLETED</b><br/>✅ Transaction Finished"]
+    EE --> FF["<b>STORE ORDER HISTORY</b><br/>📚 Portal Database"]
+    
+    %% Future Refill Process
+    A --> GG{"<b>NEED REFILL?</b><br/>🔄 Future Requirement"}
+    GG -->|"<b>YES</b>"| HH["<b>ACCESS ORDER<br/>HISTORY</b><br/>📋 Previous Orders"]
+    HH --> II["<b>SELECT PREVIOUS<br/>ORDER</b><br/>🔍 Order Selection"]
+    II --> JJ["<b>CONTACT SAME<br/>PHARMACY DIRECTLY</b><br/>📞 Direct Connection"]
+    JJ --> KK["<b>DIRECT CHAT WITH<br/>PREVIOUS PHARMACY</b><br/>💬 Established Relationship"]
+    KK --> LL["<b>DISCUSS REFILL<br/>REQUIREMENTS</b><br/>🗣 Refill Discussion"]
+    LL --> MM{"<b>MEDICINE<br/>AVAILABLE?</b><br/>📦 Stock Check"}
+    
+    MM -->|"<b>YES</b>"| NN["<b>PROCESS REFILL<br/>ORDER</b><br/>⚙ Refill Processing"]
+    MM -->|"<b>NO</b>"| OO["<b>SUGGEST ALTERNATIVES<br/>OR RESTOCK TIMELINE</b><br/>💡 Alternative Solutions"]
+    
+    NN --> PP["<b>REFILL DELIVERY/<br/>PICKUP</b><br/>🚚 Refill Logistics"]
+    PP --> QQ["<b>REFILL COMPLETED</b><br/>✅ Refill Finished"]
+    QQ --> FF
+    
+    OO --> RR{"<b>ACCEPT<br/>ALTERNATIVE?</b><br/>🤔 Client Decision"}
+    RR -->|"<b>YES</b>"| NN
+    RR -->|"<b>NO</b>"| SS["<b>WAIT FOR RESTOCK OR<br/>FIND ANOTHER PHARMACY</b><br/>⏳ Alternative Options"]
+    SS --> H
+    
+    %% Enhanced System Components Styling with Bold Text
+    classDef clientStyle fill:#e1f5fe,stroke:#01579b,stroke-width:4px,color:#000,font-weight:bold
+    classDef portalStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:4px,color:#000,font-weight:bold
+    classDef pharmacyStyle fill:#e8f5e8,stroke:#1b5e20,stroke-width:4px,color:#000,font-weight:bold
+    classDef doctorStyle fill:#fff8e1,stroke:#f57f17,stroke-width:4px,color:#000,font-weight:bold
+    classDef specialistStyle fill:#fce4ec,stroke:#c2185b,stroke-width:4px,color:#000,font-weight:bold
+    classDef processStyle fill:#fff3e0,stroke:#e65100,stroke-width:4px,color:#000,font-weight:bold
+    classDef decisionStyle fill:#f1f8e9,stroke:#33691e,stroke-width:4px,color:#000,font-weight:bold
+    
+    class A clientStyle
+    class B,F,FF,HH,FF1,HH1,II1,JJ1,KK1 portalStyle
+    class C,J,K,L,P,Q,R,T,U,V,BB,CC,DD,JJ,KK,NN,PP pharmacyStyle
+    class D1,I1,L1,M1,T1,U1,W1,X1,MM1,NN1 doctorStyle
+    class E1,J1,K1,Z1,AA1,BB1,CC1,DD1,EE1 specialistStyle
+    class D,G,H,I,W,X,Z,EE,II,LL,QQ,SS,AA,F1,G1,N1,O1,P1,R1,S1,GG1 processStyle
+    class E,M,N,O,Y,GG,MM,RR,H1,V1,Y1,Q1,LL1 decisionStyle

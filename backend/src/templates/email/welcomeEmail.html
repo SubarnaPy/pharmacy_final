@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to {{appName}}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #059669; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .button { display: inline-block; background: #059669; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Welcome to {{appName}}!</h1>
+    </div>
+    <div class="content">
+        <p>Hello {{firstName}},</p>
+        <p>Welcome to {{appName}}! Your account has been successfully created and verified.</p>
+        <p>You can now access all the features of our platform:</p>
+        <ul>
+            <li>Browse and search pharmacies</li>
+            <li>Order medications online</li>
+            <li>Track your orders</li>
+            <li>Consult with healthcare professionals</li>
+            <li>Manage your health records</li>
+        </ul>
+        <p style="text-align: center;">
+            <a href="{{appUrl}}" class="button">Get Started</a>
+        </p>
+        <p>If you have any questions or need assistance, don't hesitate to contact our support team.</p>
+    </div>
+    <div class="footer">
+        <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+        <p>If you have any questions, contact us at {{supportEmail}}</p>
+    </div>
+</body>
+</html>

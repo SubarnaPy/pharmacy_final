@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Account Temporarily Locked</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Security Notice</h1>
+    </div>
+    <div class="content">
+        <p>Hello {{firstName}},</p>
+        <p>Your {{appName}} account has been temporarily locked due to multiple failed login attempts.</p>
+        <p><strong>Locked on:</strong> {{lockedAt}}</p>
+        <p><strong>Unlock time:</strong> {{unlockAt}}</p>
+        <p>This is a security measure to protect your account. You can try logging in again after the unlock time.</p>
+        <p>If you didn't attempt to log in, please contact our support team.</p>
+    </div>
+    <div class="footer">
+        <p>© {{currentYear}} {{appName}}. All rights reserved.</p>
+        <p>If you have any questions, contact us at {{supportEmail}}</p>
+    </div>
+</body>
+</html>
