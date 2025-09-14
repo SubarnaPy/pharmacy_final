@@ -45,76 +45,8 @@ function DetailedPrescriptionView() {
     } catch (error) {
       console.error('❌ Error fetching prescription details:', error);
       toast.error('Failed to load prescription details');
-      
-      // Mock data for development - same structure as pharmacy view
-      const mockData = {
-        _id: id,
-        patientId: {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com',
-          phone: '+1234567890'
-        },
-        prescriptionImageUrl: 'https://via.placeholder.com/600x800/f0f0f0/666?text=Prescription+Image',
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        aiProcessingResults: {
-          medications: [
-            {
-              name: 'Amoxicillin',
-              dosage: '500mg',
-              frequency: 'Three times daily',
-              duration: '7 days',
-              instructions: 'Take with food',
-              genericAvailable: true,
-              category: 'Antibiotic'
-            },
-            {
-              name: 'Ibuprofen',
-              dosage: '400mg',
-              frequency: 'As needed',
-              duration: '5 days',
-              instructions: 'Take with meals, max 3 times per day',
-              genericAvailable: true,
-              category: 'Pain reliever'
-            }
-          ],
-          patientInfo: {
-            name: 'John Doe',
-            age: '32',
-            gender: 'Male',
-            allergies: ['Penicillin'],
-            conditions: ['Hypertension']
-          },
-          doctorInfo: {
-            name: 'Dr. Sarah Johnson',
-            license: 'MD123456',
-            specialty: 'Family Medicine',
-            contact: 'clinic@healthcare.com'
-          },
-          prescriptionDate: '2024-01-15',
-          diagnosis: 'Upper respiratory tract infection',
-          totalCost: '$45.99',
-          riskAssessment: {
-            overall: 'low',
-            interactions: [],
-            contraindications: [],
-            recommendations: ['Monitor for allergic reactions', 'Complete full course of antibiotics']
-          },
-          qualityMetrics: {
-            clarity: 95,
-            completeness: 90,
-            legibility: 88,
-            confidence: 92
-          }
-        },
-        preferences: {
-          deliveryMethod: 'delivery',
-          urgency: 'normal',
-          notes: 'Please deliver between 2-5 PM'
-        }
-      };
-      setPrescriptionData(mockData);
+      // No fallback data - show proper error state
+      setPrescriptionData(null);
     } finally {
       setLoading(false);
     }
@@ -161,7 +93,7 @@ function DetailedPrescriptionView() {
             The prescription you're looking for doesn't exist or has been removed.
           </p>
           <button
-            onClick={() => navigate('/patient-dashboard')}
+            onClick={() => navigate('/patient')}
             className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
           >
             Back to Dashboard
@@ -178,7 +110,7 @@ function DetailedPrescriptionView() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => navigate('/patient-dashboard')}
+              onClick={() => navigate('/patient')}
               className="p-2 hover:bg-white/80 dark:hover:bg-gray-800/80 rounded-lg transition-colors"
             >
               <ArrowLeftIcon className="h-6 w-6 text-gray-600 dark:text-gray-400" />

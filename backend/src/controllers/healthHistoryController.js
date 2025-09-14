@@ -8,7 +8,7 @@ import { asyncHandler } from '../middleware/errorMiddleware.js';
  * @access  Private
  */
 export const getHealthHistory = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.userId).select('healthHistory');
+  const user = await User.findById(req.user._id).select('healthHistory');
   if (!user) {
     return next(new AppError('User not found', 404));
   }
@@ -32,7 +32,7 @@ export const addHealthHistory = asyncHandler(async (req, res, next) => {
     return next(new AppError('Condition is required', 400));
   }
 
-  const user = await User.findById(req.user.userId);
+  const user = await User.findById(req.user._id);
   if (!user) {
     return next(new AppError('User not found', 404));
   }
@@ -64,7 +64,7 @@ export const updateHealthHistory = asyncHandler(async (req, res, next) => {
   const { recordId } = req.params;
   const updates = req.body;
 
-  const user = await User.findById(req.user.userId);
+  const user = await User.findById(req.user._id);
   if (!user) {
     return next(new AppError('User not found', 404));
   }
@@ -92,7 +92,7 @@ export const updateHealthHistory = asyncHandler(async (req, res, next) => {
 export const deleteHealthHistory = asyncHandler(async (req, res, next) => {
   const { recordId } = req.params;
 
-  const user = await User.findById(req.user.userId);
+  const user = await User.findById(req.user._id);
   if (!user) {
     return next(new AppError('User not found', 404));
   }

@@ -207,7 +207,7 @@ class AdvancedAIService {
           
           return {
             success: true,
-            processingMethod: 'gemini_2.5_flash_enhanced',
+            processingMethod: 'gemini_2.5_flash',
             geminiResults,
             enhancedAnalysis: combinedResults,
             processingTime: Date.now(),

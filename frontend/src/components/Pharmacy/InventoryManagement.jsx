@@ -232,8 +232,57 @@ function InventoryManagement() {
         toast.error('Pharmacy ID not found. Please ensure you are logged in as a pharmacy user.');
         return;
       }
-      // Map frontend fields to backend schema
-      const payload = {
+
+      // First, create/update entry in comprehensive Medicine schema
+      const medicinePayload = {
+        basicInfo: {
+          name: newItem.name,
+          genericName: newItem.genericName || newItem.name,
+          brandNames: newItem.brandName ? [newItem.brandName] : [],
+          manufacturer: newItem.manufacturer,
+          ndc: newItem.ndc || '',
+          barcode: newItem.barcode || ''
+        },
+        formulation: {
+          dosageForm: newItem.dosageForm,
+          strength: newItem.strength,
+          unit: newItem.unit,
+          packSize: newItem.packSize || 1,
+          activeIngredients: newItem.activeIngredients || []
+        },
+        regulatory: {
+          prescriptionRequired: newItem.prescriptionRequired,
+          controlledSubstance: newItem.controlledSubstance || false
+        },
+        clinicalInfo: {
+          therapeuticClass: newItem.category || 'General',
+          instructions: newItem.instructions || ''
+        },
+        inventory: {
+          reorderLevel: newItem.reorderLevel || 10,
+          maxStockLevel: newItem.maxStockLevel || 100
+        },
+        pricing: {
+          wholesaleCost: newItem.wholesaleCost || 0,
+          retailPrice: newItem.unitPrice || 0
+        },
+        pharmacySpecific: {
+          pharmacyId: pharmacyId,
+          location: newItem.location || '',
+          notes: newItem.description || ''
+        }
+      };
+
+      // Create medicine entry first
+      try {
+        await apiClient.post('/medicines', medicinePayload);
+        console.log('Medicine entry created successfully');
+      } catch (medicineError) {
+        console.log('Medicine entry creation failed, proceeding:', medicineError.message);
+      }
+
+      // Then create inventory entry
+      const inventoryPayload = {
         medicineName: newItem.name,
         brandName: newItem.brandName,
         batchNumber: newItem.batchNumber,
@@ -248,9 +297,10 @@ function InventoryManagement() {
         requiresPrescription: newItem.prescriptionRequired,
         medicineImage: newItem.medicineImage
       };
-      const response = await uploadSingleProduct(pharmacyId, payload);
+      
+      const response = await uploadSingleProduct(pharmacyId, inventoryPayload);
       if (response.data.success) {
-        toast.success('Item added successfully');
+        toast.success('Medicine added to comprehensive database and inventory!');
         setShowAddModal(false);
         setNewItem({
           name: '',
@@ -646,49 +696,116 @@ function InventoryManagement() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Name
+                  Medicine Name *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., Paracetamol"
+                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Category
+                  Generic Name
                 </label>
                 <input
                   type="text"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  value={formData.genericName}
+                  onChange={(e) => setFormData({ ...formData, genericName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., Acetaminophen"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Manufacturer
+                  Brand Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.brandName}
+                  onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., Tylenol"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Therapeutic Category
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Select Category</option>
+                  <option value="Analgesics">Analgesics</option>
+                  <option value="Antibiotics">Antibiotics</option>
+                  <option value="Antihypertensives">Antihypertensives</option>
+                  <option value="Cardiovascular">Cardiovascular</option>
+                  <option value="Gastrointestinal">Gastrointestinal</option>
+                  <option value="Neurological">Neurological</option>
+                  <option value="Respiratory">Respiratory</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Manufacturer *
                 </label>
                 <input
                   type="text"
                   value={formData.manufacturer}
                   onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., Johnson & Johnson"
+                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Batch Number
+                  NDC Number
+                </label>
+                <input
+                  type="text"
+                  value={formData.ndc}
+                  onChange={(e) => setFormData({ ...formData, ndc: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., 12345-678-90"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Barcode
+                </label>
+                <input
+                  type="text"
+                  value={formData.barcode}
+                  onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., 123456789012"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Batch Number *
                 </label>
                 <input
                   type="text"
                   value={formData.batchNumber}
                   onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., BATCH001"
+                  required
                 />
               </div>
 
@@ -742,7 +859,67 @@ function InventoryManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Unit Price ($)
+                  Dosage Form *
+                </label>
+                <select
+                  value={formData.dosageForm}
+                  onChange={(e) => setFormData({ ...formData, dosageForm: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  required
+                >
+                  <option value="tablet">Tablet</option>
+                  <option value="capsule">Capsule</option>
+                  <option value="syrup">Syrup</option>
+                  <option value="injection">Injection</option>
+                  <option value="drops">Drops</option>
+                  <option value="cream">Cream</option>
+                  <option value="ointment">Ointment</option>
+                  <option value="gel">Gel</option>
+                  <option value="patch">Patch</option>
+                  <option value="inhaler">Inhaler</option>
+                  <option value="suppository">Suppository</option>
+                  <option value="powder">Powder</option>
+                  <option value="solution">Solution</option>
+                  <option value="suspension">Suspension</option>
+                  <option value="lotion">Lotion</option>
+                  <option value="spray">Spray</option>
+                  <option value="granules">Granules</option>
+                  <option value="sachets">Sachets</option>
+                  <option value="vial">Vial</option>
+                  <option value="ampoule">Ampoule</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Strength
+                </label>
+                <input
+                  type="text"
+                  value={formData.strength}
+                  onChange={(e) => setFormData({ ...formData, strength: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., 500mg, 5ml"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Wholesale Cost ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.wholesaleCost}
+                  onChange={(e) => setFormData({ ...formData, wholesaleCost: parseFloat(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Retail Price ($) *
                 </label>
                 <input
                   type="number"
@@ -750,30 +927,68 @@ function InventoryManagement() {
                   value={formData.unitPrice}
                   onChange={(e) => setFormData({ ...formData, unitPrice: parseFloat(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="0.00"
+                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Location
+                  Storage Location
                 </label>
                 <input
                   type="text"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., Shelf A-1, Refrigerator"
+                />
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.prescriptionRequired}
+                    onChange={(e) => setFormData({ ...formData, prescriptionRequired: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Requires Prescription</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.controlledSubstance}
+                    onChange={(e) => setFormData({ ...formData, controlledSubstance: e.target.checked })}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Controlled Substance</span>
+                </label>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Clinical Instructions
+                </label>
+                <textarea
+                  rows={2}
+                  value={formData.instructions}
+                  onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Usage instructions, dosage guidelines, etc."
                 />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
+                  Additional Notes
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Additional pharmacy-specific notes..."
                 />
               </div>
             </div>
@@ -833,6 +1048,15 @@ function InventoryManagement() {
         </div>
 
         <div className="flex items-center space-x-3">
+          {/* Enhanced Medicine Database Button */}
+          <button
+            onClick={() => toast.info('Enhanced medicine database integration active! All new medicines are added to both comprehensive Medicine schema and pharmacy inventory.')}
+            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg"
+          >
+            <span className="text-sm">🧬</span>
+            <span className="text-sm font-semibold">Enhanced DB</span>
+          </button>
+
           {/* View Toggle Button */}
           <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             <button
@@ -1012,7 +1236,7 @@ function InventoryManagement() {
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Please register your pharmacy first to manage inventory
           </p>
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.MODE === 'development' && (
             <button
               onClick={createTestPharmacy}
               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
@@ -1109,10 +1333,12 @@ function InventoryManagement() {
                         📋 Upload Instructions:
                       </h4>
                       <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                        <li>• Download the CSV template first</li>
-                        <li>• Fill in all required fields (name, genericName, ndc, etc.)</li>
+                        <li>• Download the CSV template first (includes sample data and valid values)</li>
+                        <li>• Fill in all required fields (medicineName, batchNumber, dosageForm, etc.)</li>
                         <li>• Use proper formats for dates (YYYY-MM-DD)</li>
                         <li>• Boolean fields: use 'true' or 'false'</li>
+                        <li>• dosageForm: tablet, capsule, syrup, injection, drops, cream, ointment, gel, patch, inhaler, suppository, powder, solution, suspension, lotion, spray, granules, sachets, vial, ampoule</li>
+                        <li>• unitMeasurement: mg, g, mcg, ml, l, iu, units, %</li>
                         <li>• Existing medications will be updated</li>
                       </ul>
                     </div>

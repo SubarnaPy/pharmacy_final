@@ -2,8 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import map styles */
+/* Import custom styles */
 @import './styles/map.css';
+@import './styles/sidebar-animations.css';
+@import './styles/animations.css';
 
 /* Global styles */
 @layer base {
@@ -20,6 +22,37 @@
   
   html {
     scroll-behavior: smooth;
+  }
+  
+  /* Layout fixes for sidebar and content */
+  .dashboard-layout {
+    position: relative;
+    min-height: 100vh;
+  }
+  
+  .sidebar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 40;
+    flex-shrink: 0;
+  }
+  
+  .main-content-container {
+    min-height: 100vh;
+    margin-left: 0;
+    transition: margin-left 0.3s ease-in-out;
+  }
+  
+  @media (min-width: 1024px) {
+    .main-content-container {
+      margin-left: 20rem; /* 320px for w-80 */
+    }
+    
+    .main-content-container.collapsed {
+      margin-left: 5rem; /* 80px for w-20 */
+    }
   }
   
   /* Enhanced custom scrollbar */

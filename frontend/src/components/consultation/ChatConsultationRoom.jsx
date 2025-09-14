@@ -141,7 +141,7 @@ const ChatConsultationRoom = () => {
       endConsultation();
       setConsultationStatus('completed');
       toast.success('Consultation ended');
-      navigate(user.role === 'doctor' ? '/doctor/consultations' : '/patient/consultation-dashboard');
+      navigate(user.role === 'doctor' ? '/doctor' : '/patient');
     } catch (error) {
       console.error('Error ending consultation:', error);
       toast.error('Failed to end consultation');

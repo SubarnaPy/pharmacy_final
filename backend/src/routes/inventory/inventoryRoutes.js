@@ -8,7 +8,8 @@ import {
   addInventoryItem,
   updateInventoryItem,
   deleteInventoryItem,
-  getPharmacyInventory
+  getPharmacyInventory,
+  getPharmacyForMedicine
 } from '../../controllers/inventory/InventoryController.js';
 import { authenticate, authorize } from '../../middleware/authMiddleware.js';
 import { customRateLimiter } from '../../middleware/rateLimiter.js';
@@ -146,6 +147,12 @@ router.delete('/items/:itemId',
       next(error);
     }
   }
+);
+
+// Get pharmacy details for a specific medicine with distance calculation
+router.get('/medicine/:medicineId/pharmacy',
+  customRateLimiter({ windowMs: 15 * 60 * 1000, max: 200 }), // 200 requests per 15 minutes
+  getPharmacyForMedicine
 );
 
 export default router;

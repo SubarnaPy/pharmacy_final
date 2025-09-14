@@ -284,7 +284,7 @@ class SidebarDataService {
         
         // Patient specific
         'my-requests': notificationCounts.status === 'fulfilled' ? (notificationCounts.value['prescription-responses'] || 0) : 0,
-        'book-doctor': dashboardStats.status === 'fulfilled' ? (dashboardStats.value.availableSlots || 0) : 0,
+        'doctor-book': dashboardStats.status === 'fulfilled' ? (dashboardStats.value.availableSlots || 0) : 0,
         reminders: dashboardStats.status === 'fulfilled' ? (dashboardStats.value.dueReminders || 0) : 0,
       };
 

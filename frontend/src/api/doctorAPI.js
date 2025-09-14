@@ -20,7 +20,7 @@ api.interceptors.request.use((config) => {
 
 export const fetchDoctors = async () => {
   try {
-    const response = await api.get('/doctors/booking');
+    const response = await api.get('v1/doctors/booking');
     return response.data;
   } catch (error) {
     console.error('Error fetching doctors:', error);
@@ -30,7 +30,7 @@ export const fetchDoctors = async () => {
 
 export const fetchDoctorSlots = async (doctorId) => {
   try {
-    const response = await api.get(`/doctors/${doctorId}/slots`);
+    const response = await api.get(`v1/doctors/${doctorId}/slots`);
     return response.data;
   } catch (error) {
     console.error('Error fetching doctor slots:', error);
@@ -40,7 +40,7 @@ export const fetchDoctorSlots = async (doctorId) => {
 
 export const bookConsultation = async (bookingData) => {
   try {
-    const response = await api.post('/consultations/book', bookingData);
+    const response = await api.post('v1/consultations/book', bookingData);
     return response.data;
   } catch (error) {
     console.error('Error booking consultation:', error);
@@ -50,7 +50,7 @@ export const bookConsultation = async (bookingData) => {
 
 export const getPatientBookings = async (patientId) => {
   try {
-    const response = await api.get(`/consultations/patient/${patientId}`);
+    const response = await api.get(`v1/consultations/patient/${patientId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching patient bookings:', error);

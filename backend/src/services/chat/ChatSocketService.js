@@ -1,4 +1,3 @@
-import { Server as SocketIOServer } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import ChatRoomManager from './ChatRoomManager.js';
 import MessageService from './MessageService.js';
@@ -10,24 +9,14 @@ import NotificationService from '../RealTimeNotificationService.js';
  * Handles real-time communication between patients, pharmacies, and practitioners
  */
 class ChatSocketService {
-  constructor(server) {
-    this.io = new SocketIOServer(server, {
-      cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        methods: ["GET", "POST"],
-        allowedHeaders: ["Authorization"],
-        credentials: true
-      },
-      transports: ['websocket', 'polling'],
-      pingTimeout: 60000,
-      pingInterval: 25000
-    });
+  constructor(io) {
+    this.io = io;
 
     // Initialize services
     this.chatRoomManager = new ChatRoomManager();
     this.messageService = new MessageService();
     this.encryptionService = new EncryptionService();
-    this.notificationService = new NotificationService();
+    this.notificationService = new NotificationService(io);
 
     // Track connected users
     this.connectedUsers = new Map(); // socketId -> userInfo

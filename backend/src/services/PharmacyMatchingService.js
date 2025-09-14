@@ -9,8 +9,8 @@ import NotificationService from './RealTimeNotificationService.js';
  * Handles geospatial queries, distance calculations, and pharmacy ranking
  */
 class PharmacyMatchingService {
-  constructor() {
-    this.notificationService = new NotificationService();
+  constructor(io) {
+    this.notificationService = new NotificationService(io);
   }
 
   /**

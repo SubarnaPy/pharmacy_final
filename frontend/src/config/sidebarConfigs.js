@@ -116,8 +116,8 @@ const getPatientSidebarConfig = (badgeCounts = {}) => ({
       icon: UserIcon,
       description: 'Healthcare providers',
       children: [
-        { key: 'book-doctor', label: 'Book Doctor', icon: PlusIcon, description: 'Find and book appointments', badge: badgeCounts['book-doctor'] || 0 },
-        { key: 'my-consultations', label: 'My Consultations', icon: VideoCameraIcon, description: 'Upcoming and past consultations' },
+        { key: 'doctor-book', label: 'Book Doctor', icon: PlusIcon, description: 'Find and book appointments', badge: badgeCounts['doctor-book'] || 0 },
+        { key: 'consultations', label: 'My Consultations', icon: VideoCameraIcon, description: 'Upcoming and past consultations' },
         { key: 'my-doctors', label: 'My Doctors', icon: UserGroupIcon, description: 'Your healthcare providers' }
       ]
     },

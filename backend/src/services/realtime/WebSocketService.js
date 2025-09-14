@@ -70,11 +70,12 @@ class WebSocketService extends EventEmitter {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        socket.userId = decoded.id;
+        const userId = decoded.userId || decoded.id; // Support both userId and id fields
+        socket.userId = userId;
         socket.userRole = decoded.role;
         socket.userData = decoded;
 
-        console.log(`🔐 User authenticated: ${decoded.id} (${decoded.role})`);
+        console.log(`🔐 User authenticated: ${userId} (${decoded.role})`);
         next();
 
       } catch (error) {

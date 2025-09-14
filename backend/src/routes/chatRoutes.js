@@ -2,7 +2,6 @@ import express from 'express';
 import { authenticate } from '../middleware/authMiddleware.js';
 import ChatRoomManager from '../services/chat/ChatRoomManager.js';
 import MessageService from '../services/chat/MessageService.js';
-import ConversationController from '../controllers/ConversationController.js';
 // import  fileUpload  from '../middleware/fileUpload.js';
 
 const router = express.Router();
@@ -10,64 +9,219 @@ const router = express.Router();
 // Initialize services
 const chatRoomManager = new ChatRoomManager();
 const messageService = new MessageService();
-const conversationController = new ConversationController();
 
-// Patient-Pharmacy Conversation Routes
+// Order Chat Routes (New System)
 /**
- * @route   GET /api/v1/chat/conversations
- * @desc    Get conversations for current user (patient or pharmacy)
+ * @route   GET /api/v1/chat/order-chats
+ * @desc    Get order chats for current user (patient or pharmacy)
  * @access  Private
  */
-router.get('/conversations', authenticate, conversationController.getConversations);
+router.get('/order-chats', authenticate, async (req, res) => {
+  try {
+    const OrderChat = (await import('../models/OrderChat.js')).default;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    let query = {};
+    if (userRole === 'patient') {
+      query.patientId = userId;
+    } else if (userRole === 'pharmacy') {
+      // For pharmacy users, we need to find the pharmacy they belong to
+      const Pharmacy = (await import('../models/Pharmacy.js')).default;
+      const pharmacy = await Pharmacy.findOne({ owner: userId });
+      if (pharmacy) {
+        query.pharmacyId = pharmacy._id;
+      }
+    }
+
+    const orderChats = await OrderChat.find(query)
+      .populate('orderId', 'orderNumber status totalAmount createdAt')
+      .populate('patientId', 'name email')
+      .populate('pharmacyId', 'name')
+      .sort({ updatedAt: -1 });
+
+    res.json({
+      success: true,
+      count: orderChats.length,
+      orderChats
+    });
+  } catch (error) {
+    console.error('Get order chats error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get order chats'
+    });
+  }
+});
 
 /**
- * @route   GET /api/v1/chat/conversations/:conversationId/messages
- * @desc    Get messages for a specific conversation
+ * @route   GET /api/v1/chat/order-chats/:orderId/messages
+ * @desc    Get messages for a specific order chat
  * @access  Private
  */
-router.get('/conversations/:conversationId/messages', authenticate, conversationController.getConversationMessages);
+router.get('/order-chats/:orderId/messages', authenticate, async (req, res) => {
+  try {
+    const OrderChat = (await import('../models/OrderChat.js')).default;
+    const { orderId } = req.params;
+    const userId = req.user.id;
+
+    // Check if user has access to this order chat
+    const orderChat = await OrderChat.findOne({
+      orderId,
+      $or: [
+        { patientId: userId },
+        { pharmacyUserId: userId }
+      ]
+    });
+
+    if (!orderChat) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied to this order chat'
+      });
+    }
+
+    const messages = orderChat.messages || [];
+
+    res.json({
+      success: true,
+      count: messages.length,
+      messages
+    });
+  } catch (error) {
+    console.error('Get order chat messages error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get order chat messages'
+    });
+  }
+});
 
 /**
- * @route   POST /api/v1/chat/messages
- * @desc    Send a message in a conversation
+ * @route   POST /api/v1/chat/order-chats/:orderId/messages
+ * @desc    Send a message in an order chat
  * @access  Private
  */
-router.post('/messages', authenticate, conversationController.sendMessage);
+router.post('/order-chats/:orderId/messages', authenticate, async (req, res) => {
+  try {
+    const OrderChat = (await import('../models/OrderChat.js')).default;
+    const { orderId } = req.params;
+    const { content, type = 'text' } = req.body;
+    const userId = req.user.id;
+
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message content is required'
+      });
+    }
+
+    // Check if user has access to this order chat
+    const orderChat = await OrderChat.findOne({
+      orderId,
+      $or: [
+        { patientId: userId },
+        { pharmacyUserId: userId }
+      ]
+    });
+
+    if (!orderChat) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied to this order chat'
+      });
+    }
+
+    const newMessage = {
+      id: Date.now().toString(),
+      senderId: userId,
+      senderRole: req.user.role,
+      content,
+      type,
+      timestamp: new Date(),
+      readBy: []
+    };
+
+    orderChat.messages = orderChat.messages || [];
+    orderChat.messages.push(newMessage);
+    orderChat.updatedAt = new Date();
+    await orderChat.save();
+
+    // Notify the other participant via WebSocket
+    const chatSocketService = req.app.get('chatSocketService');
+    if (chatSocketService) {
+      const recipientId = orderChat.patientId.toString() === userId ?
+        orderChat.pharmacyUserId.toString() :
+        orderChat.patientId.toString();
+
+      chatSocketService.getIO().to(`user_${recipientId}`).emit('new_message', {
+        orderId,
+        message: newMessage
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: newMessage
+    });
+  } catch (error) {
+    console.error('Send order chat message error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to send message'
+    });
+  }
+});
 
 /**
- * @route   POST /api/v1/chat/conversations/:conversationId/read
- * @desc    Mark conversation as read
+ * @route   POST /api/v1/chat/order-chats/:orderId/read
+ * @desc    Mark order chat messages as read
  * @access  Private
  */
-router.post('/conversations/:conversationId/read', authenticate, conversationController.markAsRead);
+router.post('/order-chats/:orderId/read', authenticate, async (req, res) => {
+  try {
+    const OrderChat = (await import('../models/OrderChat.js')).default;
+    const { orderId } = req.params;
+    const userId = req.user.id;
 
-/**
- * @route   POST /api/v1/chat/conversations/prescription
- * @desc    Create conversation when pharmacy accepts prescription
- * @access  Private (Pharmacy only)
- */
-router.post('/conversations/prescription', authenticate, conversationController.createPrescriptionConversation);
+    // Check if user has access to this order chat
+    const orderChat = await OrderChat.findOne({
+      orderId,
+      $or: [
+        { patientId: userId },
+        { pharmacyUserId: userId }
+      ]
+    });
 
-/**
- * @route   POST /api/v1/chat/conversations/order
- * @desc    Create conversation when order is confirmed
- * @access  Private
- */
-router.post('/conversations/order', authenticate, conversationController.createOrderConversation);
+    if (!orderChat) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied to this order chat'
+      });
+    }
 
-/**
- * @route   GET /api/v1/chat/notifications/unread-counts
- * @desc    Get unread message counts by conversation
- * @access  Private
- */
-router.get('/notifications/unread-counts', authenticate, conversationController.getUnreadMessageCounts);
+    // Mark messages as read by current user
+    if (orderChat.messages) {
+      orderChat.messages.forEach(message => {
+        if (message.senderId !== userId && !message.readBy.includes(userId)) {
+          message.readBy.push(userId);
+        }
+      });
+      await orderChat.save();
+    }
 
-/**
- * @route   GET /api/v1/chat/notifications/total-unread
- * @desc    Get total unread message count
- * @access  Private
- */
-router.get('/notifications/total-unread', authenticate, conversationController.getTotalUnreadCount);
+    res.json({
+      success: true,
+      message: 'Messages marked as read'
+    });
+  } catch (error) {
+    console.error('Mark order chat read error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to mark messages as read'
+    });
+  }
+});
 
 /**
  * @route   POST /api/v1/chat/upload

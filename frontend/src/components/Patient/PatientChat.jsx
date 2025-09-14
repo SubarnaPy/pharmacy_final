@@ -119,11 +119,11 @@ function PatientChat({
       if (selectedConversationRef.current && messageData.roomId === selectedConversationRef.current) {
         setMessages(prev => {
           // Avoid duplicates if we already appended optimistically
-          if (prev.some(m => m._id === messageData.id)) return prev;
+          if (prev.some(m => m._id === messageData._id)) return prev;
           return [
             ...prev,
             {
-              _id: messageData.id,
+              _id: messageData._id || messageData.id,
               content: messageData.content,
               sender: messageData.sender.role === 'patient' ? 'patient' : 'pharmacy',
               senderId: messageData.sender,
@@ -137,9 +137,9 @@ function PatientChat({
       }
 
       // Update conversation list
-      setActiveConversations(prev => 
-        prev.map(conv => 
-          conv._id === messageData.roomId 
+      setActiveConversations(prev =>
+        prev.map(conv =>
+          conv._id === messageData.roomId
             ? {
                 ...conv,
                 lastMessage: {
@@ -191,22 +191,45 @@ function PatientChat({
 
   const fetchActiveConversations = async () => {
     setLoading(true);
-    console.log('🔍 PatientChat - Fetching conversations...');
+    console.log('🔍 PatientChat - Fetching order chats...');
     try {
-      const response = await apiClient.get('/chat/conversations');
-      console.log('📋 PatientChat - Conversations API Response:', response.data);
+      const response = await apiClient.get('/order-chat/user/conversations');
+      console.log('📋 PatientChat - Order chats API Response:', response.data);
 
       if (response.data.success) {
-        const conversations = response.data.data || [];
-        console.log('✅ PatientChat - Setting conversations:', conversations);
-        setActiveConversations(conversations);
+        const orderChats = response.data.data?.conversations || [];
+        console.log('✅ PatientChat - Setting order chats:', orderChats);
+
+        // Transform order chats to match the expected conversation format
+        const transformedConversations = orderChats.map(orderChat => ({
+          _id: orderChat._id,
+          type: 'order',
+          orderId: orderChat.orderId,
+          order: orderChat.orderId,
+          patientId: orderChat.patientId,
+          pharmacy: {
+            _id: orderChat.otherParticipant?.userId,
+            name: orderChat.otherParticipant?.name,
+            contact: { phone: orderChat.otherParticipant?.phone },
+            address: orderChat.otherParticipant?.address
+          },
+          status: orderChat.isActive ? 'active' : 'inactive',
+          lastMessage: orderChat.lastMessage,
+          unreadCount: orderChat.unreadCount || 0, // Will be updated by notifications hook
+          roomId: orderChat.roomId,
+          createdAt: orderChat.createdAt,
+          updatedAt: orderChat.updatedAt,
+          orderInfo: orderChat.orderInfo
+        }));
+
+        setActiveConversations(transformedConversations);
       } else {
         console.error('❌ PatientChat - API returned success=false:', response.data);
-        throw new Error('Failed to fetch conversations');
+        throw new Error('Failed to fetch order chats');
       }
     } catch (error) {
-      console.error('❌ PatientChat - Error fetching conversations:', error);
-      toast.error('Failed to load conversations');
+      console.error('❌ PatientChat - Error fetching order chats:', error);
+      toast.error('Failed to load order chats');
     } finally {
       setLoading(false);
     }
@@ -215,27 +238,42 @@ function PatientChat({
   const fetchConversationById = async (id) => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/chat/conversations');
+      // Get or create order chat using the new endpoint
+      const response = await apiClient.get(`/order-chat/${id}`);
       if (response.data.success) {
-        const conversations = response.data.data || [];
-        const conv = conversations.find(c => c._id === id);
-        if (conv) {
-          console.log('🎯 PatientChat - Found conversation by id:', id, conv);
-          setActiveConversations([conv]);
-          setSelectedConversation(conv);
-          fetchMessages(conv._id);
-        } else {
-          // Fallback: use bare selection and still fetch messages/header minimal
-          console.warn('⚠️ PatientChat - Conversation id not found in list, selecting bare:', id);
-          setSelectedConversation({ _id: id, pharmacy: {} });
-          fetchMessages(id);
-        }
+        const orderChat = response.data.data.orderChat;
+        console.log('🎯 PatientChat - Found order chat by id:', id, orderChat);
+
+        // Transform order chat to match conversation format
+        const transformedConversation = {
+          _id: orderChat._id,
+          type: 'order',
+          orderId: orderChat.orderId,
+          order: orderChat.orderId,
+          patientId: orderChat.patientId,
+          pharmacy: {
+            _id: orderChat.pharmacyId?._id,
+            name: orderChat.pharmacyId?.name,
+            contact: { phone: orderChat.pharmacyId?.phone },
+            address: orderChat.pharmacyId?.address
+          },
+          status: orderChat.isActive ? 'active' : 'inactive',
+          lastMessage: orderChat.lastMessage,
+          unreadCount: orderChat.unreadCount || 0,
+          roomId: orderChat.roomId,
+          createdAt: orderChat.createdAt,
+          updatedAt: orderChat.updatedAt
+        };
+
+        setActiveConversations([transformedConversation]);
+        setSelectedConversation(transformedConversation);
+        fetchMessages(orderChat.orderId);
       } else {
-        throw new Error('Failed to fetch conversations');
+        throw new Error('Failed to fetch order chat');
       }
     } catch (error) {
-      console.error('❌ PatientChat - Error fetching conversation by id:', error);
-      toast.error('Failed to load conversation');
+      console.error('❌ PatientChat - Error fetching order chat by id:', error);
+      toast.error('Failed to load order chat');
     } finally {
       setLoading(false);
     }
@@ -244,43 +282,43 @@ function PatientChat({
   const fetchOrderConversation = async () => {
     setLoading(true);
     try {
-      // Get all conversations and filter for the specific order
-      const response = await apiClient.get('/chat/conversations');
+      // Try to get or create order chat using the new endpoint
+      console.log('🔍 PatientChat - Looking for order chat. orderId:', orderId, 'orderNumber:', orderNumber);
+      const response = await apiClient.get(`/order-chat/${orderId}`);
 
       if (response.data.success) {
-        const conversations = response.data.data || [];
-        
-        // Find the conversation for this specific order.
-        // Backend conversations for patients include `order` object, not `metadata`.
-        console.log('🔍 PatientChat - Looking for order conversation. orderId:', orderId, 'orderNumber:', orderNumber);
-        console.log('🔍 PatientChat - Available conversations:', conversations.map(c => ({
-          _id: c._id,
-          type: c.type,
-          order: c.order,
-          metadata: c.metadata
-        })));
-        
-        const orderConversation = conversations.find(conv => {
-          if (conv.type !== 'order') return false;
-          const byId = conv.order?._id === orderId;
-          const byNumber = orderNumber && conv.order?.orderNumber === orderNumber;
-          console.log('🔍 PatientChat - Checking conversation:', conv._id, 'byId:', byId, 'byNumber:', byNumber);
-          return byId || byNumber;
-        });
+        const orderChat = response.data.data.orderChat;
+        console.log('✅ PatientChat - Found order chat:', orderChat);
 
-        if (orderConversation) {
-          console.log('✅ PatientChat - Found order conversation:', orderConversation);
-          setActiveConversations([orderConversation]);
-          setSelectedConversation(orderConversation);
-          fetchMessages(orderConversation._id);
-        } else {
-          console.log('❌ PatientChat - No matching conversation found for orderId:', orderId, 'orderNumber:', orderNumber);
-          console.log('❌ PatientChat - Will try to create new conversation');
-          // No conversation found, try to create one
-          await createOrderConversation();
-        }
+        // Transform order chat to match conversation format
+        const transformedConversation = {
+          _id: orderChat._id,
+          type: 'order',
+          orderId: orderChat.orderId,
+          order: orderChat.orderId,
+          patientId: orderChat.patientId,
+          pharmacy: {
+            _id: orderChat.pharmacyId?._id,
+            name: orderChat.pharmacyId?.name,
+            contact: { phone: orderChat.pharmacyId?.phone },
+            address: orderChat.pharmacyId?.address
+          },
+          status: orderChat.isActive ? 'active' : 'inactive',
+          lastMessage: orderChat.lastMessage,
+          unreadCount: orderChat.unreadCount || 0,
+          roomId: orderChat.roomId,
+          createdAt: orderChat.createdAt,
+          updatedAt: orderChat.updatedAt
+        };
+
+        setActiveConversations([transformedConversation]);
+        setSelectedConversation(transformedConversation);
+        fetchMessages(orderChat.orderId);
       } else {
-        throw new Error('Failed to fetch conversations');
+        console.log('❌ PatientChat - No order chat found for orderId:', orderId);
+        console.log('❌ PatientChat - Order chats are created automatically when orders are placed');
+        // Show appropriate message since order chats are created automatically
+        toast.error('Order chat not found. Please ensure your order has been placed successfully.');
       }
     } catch (error) {
       console.error('Error fetching order conversation:', error);
@@ -293,55 +331,49 @@ function PatientChat({
 
   const createOrderConversation = async () => {
     try {
-      const response = await apiClient.post('/chat/conversations/order', {
-        orderId: orderId
-      });
-
-      if (response.data.success && response.data.data) {
-        setActiveConversations([response.data.data]);
-        setSelectedConversation(response.data.data);
-        fetchMessages(response.data.data._id);
-      } else {
-        throw new Error(response.data.message || 'Failed to create order conversation');
-      }
+      // Since we're using the new OrderChat system, we can't create conversations from the frontend
+      // The order chats are created automatically when orders are placed
+      // For now, we'll just show an error message
+      console.error('Cannot create order chat from frontend - order chats are created automatically');
+      toast.error('Order chat not found. Please contact support if this issue persists.');
     } catch (error) {
       console.error('Error creating order conversation:', error);
       toast.error('Failed to create order conversation');
     }
   };
 
-  const fetchMessages = async (conversationId) => {
+  const fetchMessages = async (orderId) => {
     setLoading(true);
-    console.log('🔍 PatientChat - Fetching messages for conversation:', conversationId);
+    console.log('🔍 PatientChat - Fetching messages for order:', orderId);
     try {
-      const response = await apiClient.get(`/chat/conversations/${conversationId}/messages`);
-      console.log('📨 PatientChat ----------------------------------------------------------- API Response:', response.data);
+      const response = await apiClient.get(`/order-chat/${orderId}/messages`);
+      console.log('📨 PatientChat - Order chat messages API Response:', response.data);
 
       if (response.data.success) {
-        const rawMessages = response.data.data;
+        const rawMessages = response.data.data?.messages || [];
         console.log('📋 PatientChat - Raw messages from API:', rawMessages);
-        
+
         const formattedMessages = rawMessages.map(msg => {
           console.log('📝 PatientChat - Processing message:', {
             id: msg._id,
             content: msg.content,
             senderId: msg.senderId,
-            senderRole: msg.senderId?.role,
-            createdAt: msg.createdAt
+            senderRole: msg.senderRole,
+            timestamp: msg.timestamp
           });
-          
+
           return {
             _id: msg._id,
             content: msg.content,
-            sender: msg.senderId.role === 'patient' ? 'patient' : 'pharmacy',
-            senderId: msg.senderId,
-            timestamp: msg.createdAt,
+            sender: msg.senderRole === 'patient' ? 'patient' : 'pharmacy',
+            senderId: { role: msg.senderRole, id: msg.senderId },
+            timestamp: msg.timestamp,
             type: msg.type,
             metadata: msg.metadata,
-            status: msg.readBy.length > 1 ? 'read' : 'delivered'
+            status: msg.readBy && msg.readBy.some(read => read.userId === getCurrentUserId()) ? 'read' : 'delivered'
           };
         });
-        
+
         console.log('✅ PatientChat - Formatted messages:', formattedMessages);
         setMessages(formattedMessages);
       } else {
@@ -359,21 +391,21 @@ function PatientChat({
   const selectConversation = (conversation) => {
     console.log('🎯 PatientChat - Selecting conversation:', conversation);
     setSelectedConversation(conversation);
-    fetchMessages(conversation._id);
-    
+    fetchMessages(conversation.orderId);
+
     // Join room for real-time updates
     if (socket) {
-      socket.emit('join_room', { roomId: conversation._id });
+      socket.emit('join_room', { roomId: conversation.roomId });
     }
-    
+
     // Mark as read using enhanced notification system
     if (getConversationUnreadCount(conversation._id) > 0) {
-      markConversationAsRead(conversation._id);
-      
+      markAsRead(conversation.orderId);
+
       // Update local conversation state to remove unread count
-      setActiveConversations(prev => 
-        prev.map(conv => 
-          conv._id === conversation._id 
+      setActiveConversations(prev =>
+        prev.map(conv =>
+          conv._id === conversation._id
             ? { ...conv, unreadCount: 0 }
             : conv
         )
@@ -383,12 +415,12 @@ function PatientChat({
 
   const markAsRead = async (conversationId) => {
     try {
-      await apiClient.post(`/chat/conversations/${conversationId}/read`);
-      
+      await apiClient.post(`/order-chat/${conversationId}/read`);
+
       // Update local state
-      setActiveConversations(prev => 
-        prev.map(conv => 
-          conv._id === conversationId 
+      setActiveConversations(prev =>
+        prev.map(conv =>
+          conv._id === conversationId
             ? { ...conv, unreadCount: 0 }
             : conv
         )
@@ -398,28 +430,40 @@ function PatientChat({
     }
   };
 
+  const getCurrentUserId = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.id || payload.userId || payload._id;
+    } catch (error) {
+      console.error('Error parsing token:', error);
+      return null;
+    }
+  };
+
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
 
     const messageData = {
-      conversationId: selectedConversation._id,
       content: newMessage.trim(),
       type: 'text'
     };
 
     try {
-      const response = await apiClient.post('/chat/messages', messageData);
+      const response = await apiClient.post(`/order-chat/${selectedConversation.orderId}/messages`, messageData);
 
       if (response.data.success) {
         setNewMessage('');
         // Optimistically append the message so the patient sees it immediately
-        const saved = response.data.data || {};
+        const saved = response.data.data?.message || {};
         const optimisticMsg = {
           _id: saved._id || `temp-${Date.now()}`,
           content: saved.content || messageData.content,
           sender: 'patient',
-          senderId: saved.senderId || { role: 'patient' },
-          timestamp: saved.createdAt || new Date().toISOString(),
+          senderId: { role: 'patient', id: getCurrentUserId() },
+          timestamp: saved.timestamp || new Date().toISOString(),
           type: saved.type || 'text',
           metadata: saved.metadata,
           status: 'delivered'
@@ -428,7 +472,7 @@ function PatientChat({
           if (prev.some(m => m._id === optimisticMsg._id)) return prev;
           return [...prev, optimisticMsg];
         });
-        
+
         // Update conversation last message
         setActiveConversations(prev =>
           prev.map(conv =>

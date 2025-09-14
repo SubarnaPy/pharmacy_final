@@ -11,8 +11,8 @@ import SafeNotificationServiceFactory from '../services/SafeNotificationServiceF
  * Handles HTTP endpoints for prescription request management
  */
 class PrescriptionRequestController {
-  constructor() {
-    this.prescriptionRequestService = new PrescriptionRequestService();
+  constructor(io = null) {
+    this.prescriptionRequestService = new PrescriptionRequestService(io);
     this.notificationService = null; // Will be initialized when needed
     console.log('✅ Prescription Request Controller initialized');
   }

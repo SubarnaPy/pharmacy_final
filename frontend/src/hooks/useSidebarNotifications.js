@@ -24,7 +24,7 @@ const useSidebarNotifications = (userRole) => {
       case 'patient':
         return {
           'prescription-requests': 3,
-          'book-doctor': 1,
+          'doctor-book': 1,
           reminders: 2,
           'order-tracking': 1,
           notifications: 5,

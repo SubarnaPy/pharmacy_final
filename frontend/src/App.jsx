@@ -32,10 +32,53 @@ import VideoConsultation from './pages/VideoConsultation';
 import VideoConsultationRoom from './components/consultation/VideoConsultationRoom';
 import ChatConsultationRoom from './components/consultation/ChatConsultationRoom';
 import DashboardDemo from './components/demo/DashboardDemo';
+import SidebarDemo from './pages/SidebarDemo';
 import AdvancedChatbot from './components/chatbot/AdvancedChatbot';
 import SymptomAnalyzer from './components/chatbot/SymptomAnalyzer';
 import DoctorFinder from './components/chatbot/DoctorFinder';
 import HealthEducation from './components/chatbot/HealthEducation';
+// Medicine System Components
+import MedicineApp from './components/MedicineApp';
+import MedicineSearch from './components/MedicineSearch';
+import MedicinePurchase from './components/MedicinePurchase';
+import MedicineOrderTracking from './components/MedicineOrderTracking';
+
+// Patient Components
+import DoctorBooking from './components/Patient/DoctorBooking';
+import PatientOrderManagement from './components/Patient/OrderManagement';
+import PatientConsultations from './components/Patient/PatientConsultations';
+import PatientConsultationHistory from './components/Patient/PatientConsultationHistory';
+import PatientPrescriptionHistory from './components/Patient/PrescriptionHistory';
+import PrescriptionRequestTracker from './components/Patient/PrescriptionRequestTracker';
+import PatientChat from './components/Patient/PatientChat';
+import ARPillScanner from './components/Patient/ARPillScanner';
+import PharmacyResponseSelector from './components/Patient/PharmacyResponseSelector';
+
+// Doctor Components
+import DoctorProfile from './components/doctor/DoctorProfile';
+import AppointmentManagement from './components/doctor/AppointmentManagement';
+import PatientList from './components/doctor/PatientList';
+import PatientRecords from './components/doctor/PatientRecords';
+import ConsultationHistory from './components/doctor/ConsultationHistory';
+import EarningsTracker from './components/doctor/EarningsTracker';
+import DoctorSettings from './components/doctor/DoctorSettings';
+import DoctorVideoConsultation from './components/doctor/VideoConsultation';
+import VoiceToPrescription from './components/doctor/VoiceToPrescription';
+
+// Pharmacy Components
+import PharmacyRegistration from './components/Pharmacy/PharmacyRegistration';
+import PrescriptionQueue from './components/Pharmacy/PrescriptionQueue';
+import PrescriptionViewer from './components/Pharmacy/PrescriptionViewer';
+import PharmacyChat from './components/Pharmacy/PharmacyChat';
+import PharmacyVideoConsultation from './components/Pharmacy/VideoConsultation';
+import PharmacyProfile from './components/Pharmacy/PharmacyProfile';
+import InventoryManagement from './components/Pharmacy/InventoryManagement';
+import PharmacyOrderManagement from './components/Pharmacy/OrderManagement';
+import TransactionDashboard from './components/Pharmacy/TransactionDashboard';
+import PharmacyPrescriptionHistory from './components/Pharmacy/PrescriptionHistory';
+import PharmacySettings from './components/Pharmacy/PharmacySettings';
+import PrescriptionTabs from './components/Pharmacy/PrescriptionTabs';
+import RiskQualityTabs from './components/Pharmacy/RiskQualityTabs';
 
 function App() {
   // Initialize notification services (temporarily disabled to prevent WebSocket errors)
@@ -81,19 +124,32 @@ function App() {
             <Route path="/register" element={<AuthRedirect><RegisterForm /></AuthRedirect>} />
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/patient-dashboard" element={<ProtectedRoute><PatientDashboard /></ProtectedRoute>} />
-            <Route path="/doctor-dashboard" element={<ProtectedRoute><DoctorDashboard /></ProtectedRoute>} />
-            <Route path="/pharmacy-dashboard" element={<ProtectedRoute><PharmacyDashboard /></ProtectedRoute>} />
-            <Route path="/admin-dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            {/* Patient Routes */}
+            <Route path="/patient" element={<ProtectedRoute><PatientDashboard /></ProtectedRoute>} />
+            <Route path="/patient/*" element={<ProtectedRoute><PatientDashboard /></ProtectedRoute>} />
+            
+            {/* Doctor Routes */}
+            <Route path="/doctor" element={<ProtectedRoute><DoctorDashboard /></ProtectedRoute>} />
+            <Route path="/doctor/*" element={<ProtectedRoute><DoctorDashboard /></ProtectedRoute>} />
+            
+            {/* Pharmacy Routes */}
+            <Route path="/pharmacy" element={<ProtectedRoute><PharmacyDashboard /></ProtectedRoute>} />
+            <Route path="/pharmacy/*" element={<ProtectedRoute><PharmacyDashboard /></ProtectedRoute>} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/*" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
 
             {/* Demo Route */}
             <Route path="/dashboard-demo" element={<DashboardDemo />} />
+            <Route path="/sidebar-demo" element={<SidebarDemo />} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/doctor/profile" element={<ProtectedRoute><DoctorProfileContainer /></ProtectedRoute>} />
             <Route path="/profile-management" element={<ProtectedRoute><DoctorProfileContainer /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/prescription/upload" element={<ProtectedRoute><PrescriptionUpload /></ProtectedRoute>} />
             <Route path="/prescriptions/history" element={<ProtectedRoute><PrescriptionHistory /></ProtectedRoute>} />
+            <Route path="/patient/prescription-history" element={<ProtectedRoute><PatientPrescriptionHistory /></ProtectedRoute>} />
             <Route path="/prescriptions/:id" element={<ProtectedRoute><PrescriptionDetails /></ProtectedRoute>} />
             <Route path="/pharmacy/prescription/:id" element={<ProtectedRoute><DetailedPrescriptionView /></ProtectedRoute>} />
             <Route path="/patient/prescription/:id" element={<ProtectedRoute><PatientDetailedPrescriptionView /></ProtectedRoute>} />
@@ -104,6 +160,12 @@ function App() {
             <Route path="/chatbot/symptoms" element={<ProtectedRoute><SymptomAnalyzer /></ProtectedRoute>} />
             <Route path="/chatbot/doctors" element={<ProtectedRoute><DoctorFinder /></ProtectedRoute>} />
             <Route path="/chatbot/education" element={<ProtectedRoute><HealthEducation /></ProtectedRoute>} />
+            
+            {/* Medicine System Routes */}
+            <Route path="/medicines" element={<ProtectedRoute><MedicineApp /></ProtectedRoute>} />
+            <Route path="/medicine-search" element={<ProtectedRoute><MedicineSearch /></ProtectedRoute>} />
+            <Route path="/medicine-purchase" element={<ProtectedRoute><MedicinePurchase /></ProtectedRoute>} />
+            <Route path="/medicine-tracking" element={<ProtectedRoute><MedicineOrderTracking /></ProtectedRoute>} />
             
             <Route path="/consultation/:consultationId/room" element={<ProtectedRoute><VideoConsultationRoom /></ProtectedRoute>} />
             <Route path="/consultation/:consultationId/chat" element={<ProtectedRoute><ChatConsultationRoom /></ProtectedRoute>} />

@@ -22,13 +22,28 @@ const HealthHistory = () => {
 
   const fetchHealthHistory = async () => {
     try {
+      // Debug authentication status
+      const token = localStorage.getItem('token');
+      console.log('🔍 HealthHistory - Token available:', !!token);
+      console.log('🔍 HealthHistory - Token value:', token ? token.substring(0, 20) + '...' : 'null');
+      
       const response = await userAPI.getHealthHistory();
       if (response.data.success) {
         setHealthHistory(response.data.data);
       }
     } catch (error) {
       console.error('Error fetching health history:', error);
-      toast.error('Failed to load health history');
+      console.error('Error details:', {
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        url: error.config?.url
+      });
+      
+      if (error.response?.status === 401) {
+        toast.error('Authentication required. Please login again.');
+      } else {
+        toast.error('Failed to load health history');
+      }
     } finally {
       setLoading(false);
     }

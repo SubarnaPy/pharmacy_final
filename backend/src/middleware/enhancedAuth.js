@@ -65,10 +65,11 @@ export const authenticateToken = async (req, res, next) => {
     }
     
     // Get user from database
-    const user = await User.findById(decoded.id).select('+isActive +lastLogin +securitySettings');
+    const userId = decoded.userId || decoded.id; // Support both userId and id fields
+    const user = await User.findById(userId).select('+isActive +lastLogin +securitySettings');
     
     if (!user) {
-      await AuditLogService.logSecurityViolation('INVALID_USER_TOKEN', req, null, { userId: decoded.id });
+      await AuditLogService.logSecurityViolation('INVALID_USER_TOKEN', req, null, { userId: userId });
       return next(new AppError('Token is invalid. User not found.', 401));
     }
     

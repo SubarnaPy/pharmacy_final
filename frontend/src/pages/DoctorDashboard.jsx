@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import {
   CalendarDaysIcon,
   UserGroupIcon,
@@ -15,9 +16,20 @@ import {
 import DashboardLayout from '../components/layout/DashboardLayout';
 import DoctorProfile from '../components/doctor/DoctorProfile';
 import ConsultationList from '../components/consultation/ConsultationList';
+import EnhancedDashboard from '../components/dashboard/EnhancedDashboard';
+import AppointmentManagement from '../components/doctor/AppointmentManagement';
+import PatientList from '../components/doctor/PatientList';
+import PatientRecords from '../components/doctor/PatientRecords';
+import ConsultationHistory from '../components/doctor/ConsultationHistory';
+import EarningsTracker from '../components/doctor/EarningsTracker';
+import DoctorSettings from '../components/doctor/DoctorSettings';
+import DoctorVideoConsultation from '../components/doctor/VideoConsultation';
+import VoiceToPrescription from '../components/doctor/VoiceToPrescription';
 
 function DoctorDashboard() {
   const { user, isAuthenticated } = useSelector(state => state.auth);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [dashboardStats, setDashboardStats] = useState({
     todayAppointments: 5,
@@ -32,6 +44,19 @@ function DoctorDashboard() {
     // Fetch dashboard data
     fetchDashboardData();
   }, []);
+
+  // Update activeSection based on current route
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/doctor' || path === '/doctor/') {
+      setActiveSection('dashboard');
+    } else {
+      const section = path.split('/doctor/')[1];
+      if (section) {
+        setActiveSection(section);
+      }
+    }
+  }, [location.pathname]);
 
   const fetchDashboardData = async () => {
     try {
@@ -116,7 +141,7 @@ function DoctorDashboard() {
           value={dashboardStats.todayAppointments}
           icon={CalendarDaysIcon}
           color="bg-blue-500"
-          onClick={() => setActiveSection('appointments')}
+          onClick={() => navigate('/doctor/appointments')}
         />
         <StatCard
           title="Total Patients"
@@ -124,7 +149,7 @@ function DoctorDashboard() {
           icon={UserGroupIcon}
           color="bg-emerald-500"
           trend={12}
-          onClick={() => setActiveSection('patients')}
+          onClick={() => navigate('/doctor/patients')}
         />
         <StatCard
           title="Monthly Earnings"
@@ -132,7 +157,7 @@ function DoctorDashboard() {
           icon={CurrencyDollarIcon}
           color="bg-purple-500"
           trend={8}
-          onClick={() => setActiveSection('earnings')}
+          onClick={() => navigate('/doctor/earnings')}
         />
         <StatCard
           title="Average Rating"
@@ -165,29 +190,37 @@ function DoctorDashboard() {
             icon={CalendarDaysIcon}
             title="Manage Schedule"
             description="View and update your availability"
-            onClick={() => setActiveSection('schedule')}
+            onClick={() => navigate('/doctor/schedule')}
             gradient="bg-gradient-to-r from-blue-500 to-cyan-500"
           />
           <QuickActionCard
             icon={UserGroupIcon}
             title="View Patients"
             description="Access patient records and history"
-            onClick={() => setActiveSection('patients')}
+            onClick={() => navigate('/doctor/patients')}
             gradient="bg-gradient-to-r from-emerald-500 to-teal-500"
           />
           <QuickActionCard
             icon={PlusIcon}
             title="New Prescription"
             description="Create prescription for patient"
-            onClick={() => setActiveSection('prescriptions')}
+            onClick={() => navigate('/doctor/prescriptions')}
             gradient="bg-gradient-to-r from-purple-500 to-pink-500"
           />
           <QuickActionCard
             icon={ChartBarIcon}
             title="View Analytics"
             description="Performance metrics and insights"
-            onClick={() => setActiveSection('analytics')}
+            onClick={() => navigate('/doctor/analytics')}
             gradient="bg-gradient-to-r from-orange-500 to-red-500"
+          />
+          <QuickActionCard
+            icon={PlusIcon}
+            title="AI Medical Tools"
+            description="Advanced AI-powered medical tools and features"
+            onClick={() => navigate('/doctor/ai-features')}
+            gradient="bg-gradient-to-r from-violet-500 to-purple-600"
+            badge="AI"
           />
         </div>
       </div>
@@ -331,6 +364,8 @@ function DoctorDashboard() {
             <p className="text-gray-600 dark:text-gray-400">Settings interface coming soon...</p>
           </div>
         );
+      case 'ai-features':
+        return <EnhancedDashboard />;
       default:
         return renderDashboardOverview();
     }
@@ -351,11 +386,43 @@ function DoctorDashboard() {
     <DashboardLayout
       userRole="doctor"
       activeSection={activeSection}
-      onSectionChange={setActiveSection}
+      onSectionChange={(section) => {
+        if (section === 'dashboard') {
+          navigate('/doctor');
+        } else {
+          navigate(`/doctor/${section}`);
+        }
+      }}
       showWelcome={activeSection === 'dashboard'}
       welcomeMessage={`Welcome back, Dr. ${user?.profile?.firstName || 'Doctor'}! 👨‍⚕️`}
     >
-      {renderActiveSection()}
+      <Routes>
+        <Route index element={renderDashboardOverview()} />
+        <Route path="profile" element={<DoctorProfile />} />
+        <Route path="appointments" element={<AppointmentManagement />} />
+        <Route path="patients" element={<PatientList />} />
+        <Route path="patient-records" element={<PatientRecords />} />
+        <Route path="consultations" element={<ConsultationList />} />
+        <Route path="consultation-history" element={<ConsultationHistory />} />
+        <Route path="prescriptions" element={<VoiceToPrescription />} />
+        <Route path="earnings" element={<EarningsTracker />} />
+        <Route path="schedule" element={<AppointmentManagement />} />
+        <Route path="analytics" element={<EarningsTracker />} />
+        <Route path="settings" element={<DoctorSettings />} />
+        <Route path="video-consultation" element={<DoctorVideoConsultation />} />
+        <Route path="ai-features" element={<EnhancedDashboard />} />
+        <Route 
+          path="*" 
+          element={
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-lg">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Page Not Found
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">This section is coming soon...</p>
+            </div>
+          } 
+        />
+      </Routes>
     </DashboardLayout>
   );
 }

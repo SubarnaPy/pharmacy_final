@@ -287,7 +287,7 @@ const DoctorProfileContainer = ({ doctorId: propDoctorId }) => {
       setShowUnsavedWarning(true);
       setPendingSection('back');
     } else {
-      navigate('/dashboard');
+      navigate('/doctor');
     }
   }, [hasUnsavedChanges, navigate]);
 

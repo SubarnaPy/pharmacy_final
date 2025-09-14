@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   CurrencyDollarIcon,
   ChartBarIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   CalendarDaysIcon,
   CreditCardIcon,
   BanknotesIcon,

@@ -5,8 +5,10 @@ import { validateRequest } from '../middleware/validation.js';
 import { body, query } from 'express-validator';
 import { calculateDistance, formatDistance, formatEstimatedTime } from '../utils/geospatial.js';
 
-const router = express.Router();
-const pharmacyMatchingService = new PharmacyMatchingService();
+// Export a function that creates the router with the Socket.IO instance
+export default function createPharmacyDiscoveryRoutes(io) {
+  const router = express.Router();
+  const pharmacyMatchingService = new PharmacyMatchingService(io);
 
 /**
  * @route   GET /api/v1/pharmacies/nearby
@@ -493,4 +495,5 @@ router.get('/coverage-analysis',
   }
 );
 
-export default router;
+  return router;
+}

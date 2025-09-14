@@ -35,18 +35,20 @@ import AuditLogService from './src/services/AuditLogService.js';
 // Import routes
 import authRoutes from './src/routes/authRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
+import patientRoutes from './src/routes/patientRoutes.js';
 import prescriptionRoutes from './src/routes/prescriptionRoutes.js';
-import prescriptionRequestRoutes from './src/routes/prescriptionRequestRoutes.js';
+import createPrescriptionRequestRoutes from './src/routes/prescriptionRequestRoutes.js';
 // import prescriptionValidationRoutes from './routes/prescriptionValidation.js';
 import pharmacyRoutes from './src/routes/pharmacyRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
 import paymentRoutes from './src/routes/paymentRoutes.js';
 import chatRoutes from './src/routes/chatRoutes.js';
-import conversationRoutes from './src/routes/conversationRoutes.js';
+import orderChatRoutes from './src/routes/orderChatRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
 import fileRoutes from './src/routes/fileRoutes.js';
-import pharmacyDiscoveryRoutes from './src/routes/pharmacyDiscovery.js';
+import createPharmacyDiscoveryRoutes from './src/routes/pharmacyDiscovery.js';
 import webrtcRoutes from './src/routes/webrtc.js';
+import medicalDocumentRoutes from './src/routes/medicalDocumentRoutes.js';
 import dashboardRoutes from './src/routes/dashboardRoutes.js';
 import consultationRoutes from './src/routes/consultationRoutes.js';
 import notificationRoutes from './src/routes/notificationRoutes.js';
@@ -56,10 +58,14 @@ import appointmentRoutes from './src/routes/appointmentRoutes.js';
 import inventoryRoutes from './src/routes/inventory/inventoryRoutes.js';
 import refillRoutes from './src/routes/refillRoutes.js';
 import chatbotRoutes from './src/routes/chatbotRoutes.js';
+import advancedHealthRoutes from './src/routes/advancedHealthRoutes.js';
+import medicineRoutes from './src/routes/medicineRoutes.js';
+// import advancedSymptomAnalyzerRoutes from './src/routes/advancedSymptomAnalyzer.js';
 
 // Import chat services
 import ChatSocketService from './src/services/chat/ChatSocketService.js';
 import WebRTCSignalingService from './src/services/webrtc/WebRTCSignalingService.js';
+import SymptomMonitoringWebSocketService from './src/services/SymptomMonitoringWebSocketService.js';
 
 // Import notification services
 import EnhancedNotificationService from './src/services/notifications/EnhancedNotificationService.js';
@@ -83,6 +89,7 @@ const io = new Server(httpServer, {
 // Initialize services
 let chatSocketService;
 let webrtcSignalingService;
+let symptomMonitoringService;
 let notificationService;
 let notificationMiddleware;
 let adminDashboardService;
@@ -167,15 +174,16 @@ app.use('/api', (req, res, next) => {
 // API Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/patient', patientRoutes);
 app.use('/api/v1/prescriptions', prescriptionRoutes);
-app.use('/api/v1/prescription-requests', prescriptionRequestRoutes);
+// prescription-requests route will be initialized in startServer() after Socket.IO is ready
 // app.use('/api/v1/prescription-validation', prescriptionValidationRoutes);
 app.use('/api/v1/pharmacies', pharmacyRoutes);
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/payments', paymentRoutes);
-app.use('/api/v1/pharmacy-discovery', pharmacyDiscoveryRoutes);
-app.use('/api/v1/chat', conversationRoutes);
+// pharmacy-discovery route will be initialized in startServer() after Socket.IO is ready
 app.use('/api/v1/chat', chatRoutes);
+app.use('/api/v1/order-chat', orderChatRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/webrtc', webrtcRoutes);
@@ -187,6 +195,10 @@ app.use('/api/v1/reminders', refillRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/notification-preferences', notificationPreferencesRoutes);
 app.use('/api/v1/chatbot', chatbotRoutes);
+app.use('/api/v1/advanced-health', advancedHealthRoutes);
+app.use('/api/v1/medicines', medicineRoutes);
+app.use('/api/v1/medical-documents', medicalDocumentRoutes);
+// app.use('/api/v1/symptom-analyzer', advancedSymptomAnalyzerRoutes);
 app.use('/api/v1', dashboardRoutes);
 
 
@@ -227,20 +239,36 @@ const startServer = async () => {
     adminDashboardService = new AdminDashboardWebSocketService(io);
     console.log('📊 Admin Dashboard WebSocket Service initialized');
     
+    // Initialize symptom monitoring WebSocket service
+    symptomMonitoringService = new SymptomMonitoringWebSocketService(io);
+    console.log('✅ Symptom monitoring WebSocket service initialized');
+
     // Make services accessible in routes after initialization
     app.set('chatSocketService', chatSocketService);
     app.set('webrtcSignalingService', webrtcSignalingService);
+    app.set('symptomMonitoringService', symptomMonitoringService);
     app.set('notificationService', notificationService);
     app.set('notificationMiddleware', notificationMiddleware);
+    
+    // Initialize routes that need Socket.IO instance
+    const prescriptionRequestRoutes = createPrescriptionRequestRoutes(io);
+    app.use('/api/v1/prescription-requests', prescriptionRequestRoutes);
+    console.log('💊 Prescription Request Routes initialized with Socket.IO');
+    
+    const pharmacyDiscoveryRoutes = createPharmacyDiscoveryRoutes(io);
+    app.use('/api/v1/pharmacy-discovery', pharmacyDiscoveryRoutes);
+    console.log('🏥 Pharmacy Discovery Routes initialized with Socket.IO');
     
     httpServer.listen(PORT, () => {
       console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
       console.log(`📊 Health check available at http://localhost:${PORT}/health`);
       console.log(`💬 Socket.io chat service running`);
-      console.log(`� WebRTC signaling service running`);
-      console.log(`�🔌 Connected users: ${chatSocketService.getConnectedUsersCount()}`);
+      console.log(`📞 WebRTC signaling service running`);
+      console.log(`🩺 Symptom monitoring WebSocket service running`);
+      console.log(`🔌 Connected users: ${chatSocketService.getConnectedUsersCount()}`);
       console.log(`🏠 Active rooms: ${chatSocketService.getActiveRoomsCount()}`);
       console.log(`📞 Active calls: ${webrtcSignalingService.getStats().activeCalls.length}`);
+      console.log(`👥 Monitoring sessions: ${symptomMonitoringService.getSessionStats().activeSessions}`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

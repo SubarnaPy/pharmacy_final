@@ -34,6 +34,7 @@ const PatientChatMessageSchema = new mongoose.Schema({
       'general',
       'healthcare_response', 
       'symptom_analysis',
+      'symptom_entry',
       'doctor_recommendation',
       'health_education',
       'health_tips',

@@ -135,7 +135,8 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('-password');
+      const userId = decoded.userId || decoded.id; // Support both userId and id fields
+      const user = await User.findById(userId).select('-password');
       
       if (user && user.isActive && !user.isLocked) {
         req.user = user;

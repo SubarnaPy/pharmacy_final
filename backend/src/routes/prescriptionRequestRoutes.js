@@ -5,8 +5,10 @@ import { rateLimiter } from '../middleware/rateLimiter.js';
 import { validateRequest } from '../middleware/validation.js';
 import { body, query, param } from 'express-validator';
 
-const router = express.Router();
-const prescriptionRequestController = new PrescriptionRequestController();
+// Export a function that creates the router with the Socket.IO instance
+export default function createPrescriptionRequestRoutes(io) {
+  const router = express.Router();
+  const prescriptionRequestController = new PrescriptionRequestController(io);
 
 // Simple test route to verify routing is working
 router.get('/test', (req, res) => {
@@ -944,4 +946,5 @@ router.all('*', (req, res) => {
   });
 });
 
-export default router;
+  return router;
+}

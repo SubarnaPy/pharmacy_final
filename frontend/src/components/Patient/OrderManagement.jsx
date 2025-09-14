@@ -96,60 +96,8 @@ function OrderManagement() {
         } catch (error) {
             console.error('❌ Error fetching orders:', error);
             toast.error('Failed to load orders');
-            // Mock data for development
-            setOrders([
-                {
-                    _id: '1',
-                    orderNumber: 'ORD-2024-001',
-                    pharmacy: {
-                        name: 'HealthPlus Pharmacy',
-                        address: '123 Medical Center Dr, City, State 12345',
-                        phone: '+1-555-0199',
-                        rating: 4.8
-                    },
-                    prescriptionRequest: {
-                        medications: [
-                            { name: 'Amoxicillin 500mg', quantity: 21, instructions: 'Take 1 capsule 3 times daily' },
-                            { name: 'Paracetamol 500mg', quantity: 20, instructions: 'Take 1 tablet every 6 hours' }
-                        ]
-                    },
-                    status: 'preparing',
-                    totalAmount: 45.99,
-                    deliveryMethod: 'pickup',
-                    deliveryAddress: '123 Main St, City, State 12345',
-                    estimatedReadyTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-                    createdAt: new Date(Date.now() - 30 * 60 * 1000),
-                    trackingNumber: 'TRK123456789',
-                    canCancel: true,
-                    canRate: false
-                },
-                {
-                    _id: '2',
-                    orderNumber: 'ORD-2024-002',
-                    pharmacy: {
-                        name: 'MediCare Plus',
-                        address: '456 Health Ave, City, State 12345',
-                        phone: '+1-555-0288',
-                        rating: 4.6
-                    },
-                    prescriptionRequest: {
-                        medications: [
-                            { name: 'Metformin 500mg', quantity: 60, instructions: 'Take 1 tablet twice daily with meals' }
-                        ]
-                    },
-                    status: 'delivered',
-                    totalAmount: 25.50,
-                    deliveryMethod: 'delivery',
-                    deliveryAddress: '456 Oak Ave, City, State 12345',
-                    estimatedReadyTime: new Date(Date.now() - 1 * 60 * 60 * 1000),
-                    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-                    deliveredAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-                    trackingNumber: 'TRK987654321',
-                    canCancel: false,
-                    canRate: true,
-                    rating: 0
-                }
-            ]);
+            // No fallback data - show proper error state
+            setOrders([]);
         } finally {
             setLoading(false);
         }

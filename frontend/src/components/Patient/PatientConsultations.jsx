@@ -50,8 +50,8 @@ const PatientConsultations = () => {
     setLoading(true);
     try {
       const params = selectedStatus !== 'all' ? { status: selectedStatus } : {};
-      const response = await consultationService.getPatientConsultations(user._id, params);
-      setConsultations(response.data.consultations || []);
+      const response = await consultationService.getPatientConsultations(params);
+      setConsultations(response.consultations || []);
     } catch (error) {
       console.error('Error loading consultations:', error);
       toast.error('Failed to load consultations');
@@ -287,7 +287,7 @@ const PatientConsultations = () => {
             }
           </p>
           <button
-            onClick={() => window.location.href = '/dashboard?section=book-doctor'}
+            onClick={() => window.location.href = '/patient/doctor-book'}
             className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
           >
             Book Your First Consultation

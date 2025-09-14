@@ -1,7 +1,12 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import mime from 'mime-types';
+import { fileURLToPath } from 'url';
+import https from 'https';
+import http from 'http';
+import crypto from 'crypto';
 
 /**
  * Advanced OCR Service with Google Gemini AI
@@ -37,6 +42,53 @@ class AdvancedOCRService {
         ]
       }
     };
+  }
+
+  /**
+   * Download image from URL to temporary file
+   * @param {string} imageUrl - URL of the image to download
+   * @returns {Promise<string>} - Path to downloaded temporary file
+   */
+  async downloadImageFromUrl(imageUrl) {
+    return new Promise((resolve, reject) => {
+      const url = new URL(imageUrl);
+      const protocol = url.protocol === 'https:' ? https : http;
+      
+      // Generate temporary filename
+      const tempFileName = `temp_${crypto.randomUUID()}.jpg`;
+      const tempDir = path.join(process.cwd(), 'temp');
+      const tempFilePath = path.join(tempDir, tempFileName);
+      
+      // Ensure temp directory exists
+      fs.mkdir(tempDir, { recursive: true }).then(() => {
+        const request = protocol.get(imageUrl, (response) => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`Failed to download image: HTTP ${response.statusCode}`));
+            return;
+          }
+          
+          const writeStream = fsSync.createWriteStream(tempFilePath);
+          response.pipe(writeStream);
+          
+          writeStream.on('finish', () => {
+            resolve(tempFilePath);
+          });
+          
+          writeStream.on('error', (error) => {
+            reject(new Error(`Failed to write downloaded image: ${error.message}`));
+          });
+        });
+        
+        request.on('error', (error) => {
+          reject(new Error(`Failed to download image: ${error.message}`));
+        });
+        
+        request.setTimeout(30000, () => {
+          request.abort();
+          reject(new Error('Download timeout'));
+        });
+      }).catch(reject);
+    });
   }
 
   /**
@@ -200,12 +252,14 @@ class AdvancedOCRService {
 
   /**
    * Run Google Gemini OCR engine
-   * @param {string} imagePath - Path to image
+   * @param {string} imagePath - Path to image or URL
    * @param {string} modelName - The Gemini model to use
    * @returns {Promise<Object>} - OCR result
    */
   async runGeminiOCR(imagePath, modelName = 'gemini-2.0-flash-exp') {
     const startTime = Date.now();
+    let tempFilePath = null;
+    
     try {
       console.log(`🧠 Running Gemini OCR with model: ${modelName}...`);
       console.log('   📁 Image path:', imagePath);
@@ -214,15 +268,25 @@ class AdvancedOCRService {
         throw new Error('Gemini AI client not initialized');
       }
 
-      // Check if file exists and validate
-      try {
-        await fs.access(imagePath);
-      } catch (error) {
-        throw new Error(`Image file not found: ${imagePath}`);
+      let actualImagePath = imagePath;
+
+      // Check if imagePath is a URL and download it
+      if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        console.log('🌐 Detected URL, downloading image...');
+        tempFilePath = await this.downloadImageFromUrl(imagePath);
+        actualImagePath = tempFilePath;
+        console.log(`📥 Downloaded image to: ${actualImagePath}`);
+      } else {
+        // Check if local file exists
+        try {
+          await fs.access(actualImagePath);
+        } catch (error) {
+          throw new Error(`Image file not found: ${actualImagePath}`);
+        }
       }
 
       // Get file stats for validation
-      const stats = await fs.stat(imagePath);
+      const stats = await fs.stat(actualImagePath);
       console.log(`   📊 File size: ${(stats.size / 1024).toFixed(2)} KB`);
       
       if (stats.size === 0) {
@@ -234,7 +298,7 @@ class AdvancedOCRService {
       }
       
       const model = this.genAI.getGenerativeModel({ model: modelName });
-      const imagePart = await this.fileToGenerativePart(imagePath);
+      const imagePart = await this.fileToGenerativePart(actualImagePath);
       
       const prompt = `
         Perform OCR on the provided medical prescription image.
@@ -290,6 +354,16 @@ class AdvancedOCRService {
     } catch (error) {
       console.error(`❌ Gemini OCR failed for model ${modelName}:`, error.message);
       throw error;
+    } finally {
+      // Clean up temporary file if it was downloaded
+      if (tempFilePath) {
+        try {
+          await fs.unlink(tempFilePath);
+          console.log(`🗑️ Cleaned up temporary file: ${tempFilePath}`);
+        } catch (cleanupError) {
+          console.warn(`⚠️ Failed to cleanup temporary file ${tempFilePath}:`, cleanupError.message);
+        }
+      }
     }
   }
 

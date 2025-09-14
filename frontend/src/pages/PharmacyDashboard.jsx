@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import {
   ClockIcon,
   DocumentTextIcon,
@@ -29,9 +30,12 @@ import OrderManagement from '../components/Pharmacy/OrderManagement';
 import TransactionDashboard from '../components/Pharmacy/TransactionDashboard';
 import PrescriptionHistory from '../components/Pharmacy/PrescriptionHistory';
 import PharmacySettings from '../components/Pharmacy/PharmacySettings';
+import EnhancedDashboard from '../components/dashboard/EnhancedDashboard';
 
 function PharmacyDashboard() {
   const { user, isAuthenticated } = useSelector(state => state.auth);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [dashboardStats, setDashboardStats] = useState({
     pendingRequests: 12,
@@ -47,6 +51,19 @@ function PharmacyDashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Update activeSection based on current route
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/pharmacy' || path === '/pharmacy/') {
+      setActiveSection('dashboard');
+    } else {
+      const section = path.split('/pharmacy/')[1];
+      if (section) {
+        setActiveSection(section);
+      }
+    }
+  }, [location.pathname]);
 
   const fetchDashboardData = async () => {
     try {
@@ -144,7 +161,7 @@ function PharmacyDashboard() {
           value={dashboardStats.pendingRequests}
           icon={ClockIcon}
           color="bg-orange-500"
-          onClick={() => setActiveSection('prescription-queue')}
+          onClick={() => navigate('/pharmacy/prescription-queue')}
           alert={dashboardStats.pendingRequests > 10}
         />
         <StatCard
@@ -153,7 +170,7 @@ function PharmacyDashboard() {
           icon={ShoppingCartIcon}
           color="bg-blue-500"
           trend={15}
-          onClick={() => setActiveSection('order-management')}
+          onClick={() => navigate('/pharmacy/order-management')}
         />
         <StatCard
           label="Monthly Revenue"
@@ -161,7 +178,7 @@ function PharmacyDashboard() {
           icon={BanknotesIcon}
           color="bg-green-500"
           trend={22}
-          onClick={() => setActiveSection('transactions')}
+          onClick={() => navigate('/pharmacy/transactions')}
         />
         <StatCard
           label="Customer Rating"
@@ -187,7 +204,7 @@ function PharmacyDashboard() {
                     {dashboardStats.lowStockItems} items low in stock
                   </p>
                   <button 
-                    onClick={() => setActiveSection('inventory')}
+                    onClick={() => navigate('/pharmacy/inventory')}
                     className="text-sm text-orange-600 hover:text-orange-800 underline"
                   >
                     Manage inventory
@@ -203,7 +220,7 @@ function PharmacyDashboard() {
                     {dashboardStats.unreadMessages} unread patient messages
                   </p>
                   <button 
-                    onClick={() => setActiveSection('chat')}
+                    onClick={() => navigate('/pharmacy/chat')}
                     className="text-sm text-blue-600 hover:text-blue-800 underline"
                   >
                     View messages
@@ -225,7 +242,7 @@ function PharmacyDashboard() {
             icon={ClockIcon}
             title="Prescription Queue"
             description="Review incoming prescription requests"
-            onClick={() => setActiveSection('prescription-queue')}
+            onClick={() => navigate('/pharmacy/prescription-queue')}
             gradient="bg-gradient-to-r from-orange-500 to-red-500"
             badge={dashboardStats.pendingRequests}
             urgent={dashboardStats.pendingRequests > 10}
@@ -234,14 +251,14 @@ function PharmacyDashboard() {
             icon={EyeIcon}
             title="Review Prescriptions"
             description="Validate and process prescriptions"
-            onClick={() => setActiveSection('prescription-viewer')}
+            onClick={() => navigate('/pharmacy/prescription-viewer')}
             gradient="bg-gradient-to-r from-blue-500 to-cyan-500"
           />
           <QuickActionCard
             icon={ArchiveBoxIcon}
             title="Manage Inventory"
             description="Update stock levels and medications"
-            onClick={() => setActiveSection('inventory')}
+            onClick={() => navigate('/pharmacy/inventory')}
             gradient="bg-gradient-to-r from-green-500 to-emerald-500"
             badge={dashboardStats.lowStockItems > 0 ? dashboardStats.lowStockItems : null}
             urgent={dashboardStats.lowStockItems > 3}
@@ -250,7 +267,7 @@ function PharmacyDashboard() {
             icon={ShoppingCartIcon}
             title="Process Orders"
             description="Fulfill and track customer orders"
-            onClick={() => setActiveSection('order-management')}
+            onClick={() => navigate('/pharmacy/order-management')}
             gradient="bg-gradient-to-r from-purple-500 to-pink-500"
             badge={dashboardStats.activeOrders}
           />
@@ -258,7 +275,7 @@ function PharmacyDashboard() {
             icon={ChatBubbleLeftRightIcon}
             title="Patient Chat"
             description="Communicate with patients"
-            onClick={() => setActiveSection('chat')}
+            onClick={() => navigate('/pharmacy/chat')}
             gradient="bg-gradient-to-r from-indigo-500 to-purple-500"
             badge={dashboardStats.unreadMessages > 0 ? dashboardStats.unreadMessages : null}
           />
@@ -266,22 +283,30 @@ function PharmacyDashboard() {
             icon={VideoCameraIcon}
             title="Video Consultation"
             description="Conduct virtual consultations"
-            onClick={() => setActiveSection('video-consultation')}
+            onClick={() => navigate('/pharmacy/video-consultation')}
             gradient="bg-gradient-to-r from-teal-500 to-cyan-500"
           />
           <QuickActionCard
             icon={BanknotesIcon}
             title="View Transactions"
             description="Track revenue and payments"
-            onClick={() => setActiveSection('transactions')}
+            onClick={() => navigate('/pharmacy/transactions')}
             gradient="bg-gradient-to-r from-yellow-500 to-orange-500"
           />
           <QuickActionCard
             icon={ChartBarIcon}
             title="Analytics"
             description="View performance metrics"
-            onClick={() => setActiveSection('analytics')}
+            onClick={() => navigate('/pharmacy/analytics')}
             gradient="bg-gradient-to-r from-pink-500 to-rose-500"
+          />
+          <QuickActionCard
+            icon={DocumentTextIcon}
+            title="AI Pharmacy Tools"
+            description="Advanced AI-powered pharmacy management tools"
+            onClick={() => setActiveSection('ai-features')}
+            gradient="bg-gradient-to-r from-emerald-500 to-teal-600"
+            badge="AI"
           />
         </div>
       </div>
@@ -409,6 +434,8 @@ function PharmacyDashboard() {
         return <PharmacyProfile />;
       case 'settings':
         return <PharmacySettings />;
+      case 'ai-features':
+        return <EnhancedDashboard />;
       default:
         return (
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-lg">
@@ -426,7 +453,7 @@ function PharmacyDashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Access Denied</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">Please log in to access the pharmacy dashboard.</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">Please log in to access your dashboard.</p>
         </div>
       </div>
     );
@@ -436,11 +463,42 @@ function PharmacyDashboard() {
     <DashboardLayout
       userRole="pharmacy"
       activeSection={activeSection}
-      onSectionChange={setActiveSection}
+      onSectionChange={(section) => {
+        if (section === 'dashboard') {
+          navigate('/pharmacy');
+        } else {
+          navigate(`/pharmacy/${section}`);
+        }
+      }}
       showWelcome={activeSection === 'dashboard'}
-      welcomeMessage={`Welcome back, ${user?.profile?.firstName || 'Pharmacist'}! 💊`}
+      welcomeMessage={`Welcome back, ${user?.profile?.pharmacyName || 'Pharmacy'}! 💊`}
     >
-      {renderActiveSection()}
+      <Routes>
+        <Route index element={renderDashboardOverview()} />
+        <Route path="profile" element={<PharmacyProfile />} />
+        <Route path="registration" element={<PharmacyRegistration />} />
+        <Route path="prescription-queue" element={<PrescriptionQueue />} />
+        <Route path="prescription-viewer" element={<PrescriptionViewer />} />
+        <Route path="prescription-history" element={<PrescriptionHistory />} />
+        <Route path="inventory" element={<InventoryManagement />} />
+        <Route path="order-management" element={<OrderManagement />} />
+        <Route path="transactions" element={<TransactionDashboard />} />
+        <Route path="chat" element={<PharmacyChat />} />
+        <Route path="video-consultation" element={<VideoConsultation />} />
+        <Route path="settings" element={<PharmacySettings />} />
+        <Route path="analytics" element={<EnhancedDashboard />} />
+        <Route 
+          path="*" 
+          element={
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-lg">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Page Not Found
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">This section is coming soon...</p>
+            </div>
+          } 
+        />
+      </Routes>
     </DashboardLayout>
   );
 }

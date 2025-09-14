@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import { InventoryItem } from './src/models/Inventory.js';
+import Medicine from './src/models/Medicine.js';
 import Pharmacy from './src/models/Pharmacy.js';
 
 // Load environment variables

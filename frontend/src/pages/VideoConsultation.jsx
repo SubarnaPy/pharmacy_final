@@ -48,6 +48,22 @@ const VideoConsultation = () => {
   const socketRef = useRef(null);
   const peerConnectionRef = useRef(null);
 
+  // Helper function to get appropriate dashboard path based on user role
+  const getDashboardPath = () => {
+    switch (user?.role) {
+      case 'patient':
+        return '/patient';
+      case 'doctor':
+        return '/doctor';
+      case 'pharmacy':
+        return '/pharmacy';
+      case 'admin':
+        return '/admin';
+      default:
+        return '/dashboard';
+    }
+  };
+
   useEffect(() => {
     loadConsultation();
     initializeSocket();
@@ -227,7 +243,7 @@ const VideoConsultation = () => {
       }
     } catch (error) {
       console.error('❌ Error loading consultation:', error);
-      navigate('/dashboard');
+      navigate(getDashboardPath());
     } finally {
       setLoading(false);
     }
@@ -307,7 +323,7 @@ const VideoConsultation = () => {
       
       setConnectionState('disconnected');
       await endConsultation(consultationId);
-      navigate('/dashboard');
+      navigate(getDashboardPath());
     } catch (error) {
       console.error('Error ending call:', error);
     }

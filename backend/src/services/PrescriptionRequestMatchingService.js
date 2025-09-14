@@ -1,5 +1,5 @@
 import Pharmacy from '../models/Pharmacy.js';
-import { InventoryItem } from '../models/Inventory.js';
+import Medicine from '../models/Medicine.js';
 import PrescriptionRequest from '../models/PrescriptionRequest.js';
 import Notification from '../models/Notification.js';
 
@@ -214,6 +214,7 @@ class PrescriptionRequestMatchingService {
 
   /**
    * Find pharmacies that can fulfill the prescription requirements
+   * Enhanced to use both Medicine schema and Inventory for comprehensive matching
    * @param {Array} medications - Array of medication objects
    * @param {Object} patientLocation - Patient's location
    * @param {number} maxDistance - Maximum distance in kilometers
@@ -222,6 +223,7 @@ class PrescriptionRequestMatchingService {
   async findMatchingPharmacies(medications, patientLocation, maxDistance = 1000) {
     try {
       console.log(`🔍 Finding pharmacies within ${maxDistance}km that can fulfill prescription`);
+      console.log(`💊 Using enhanced Medicine schema + Inventory matching`);
 
       // Get all active pharmacies
       console.log(`🔍 Searching for pharmacies with criteria:`);
@@ -300,117 +302,22 @@ class PrescriptionRequestMatchingService {
             continue;
           }
 
-          // Check inventory for all required medicines
-          console.log(`📦 Checking inventory for pharmacy ${pharmacy.name} (ID: ${pharmacy._id})`);
+          // Enhanced medication availability check using both Medicine schema and Inventory
+          const medicationAvailability = await this.checkEnhancedMedicationAvailability(
+            pharmacy._id, 
+            requiredMedicines
+          );
 
-          const inventoryItems = await InventoryItem.find({
-            pharmacyId: pharmacy._id,
-            quantityAvailable: { $gt: 0 },
-            status: { $in: ['available', 'low-stock'] }
-          }).select('medicineName quantityAvailable pricePerUnit status');
+          const { availableMedications, missingMedications, matchingDetails } = medicationAvailability;
 
-          console.log(`📦 Pharmacy inventory query results: ${inventoryItems.length} items in stock`);
-
-          // If no items found, check if there are ANY items for this pharmacy
-          if (inventoryItems.length === 0) {
-            console.log(`⚠️ No items found with current criteria. Checking all inventory for this pharmacy...`);
-
-            const allInventoryItems = await InventoryItem.find({
-              pharmacyId: pharmacy._id
-            }).select('medicineName quantityAvailable pricePerUnit status');
-
-            console.log(`   - Total inventory items (any status): ${allInventoryItems.length}`);
-
-            if (allInventoryItems.length > 0) {
-              console.log(`   📋 All inventory items for ${pharmacy.name}:`);
-              allInventoryItems.forEach((item, idx) => {
-                console.log(`     ${idx + 1}. "${item.medicineName}" (Qty: ${item.quantityAvailable}, Status: ${item.status})`);
-              });
-            } else {
-              console.log(`   📭 No inventory items exist for this pharmacy at all`);
-            }
-          }
-
-          // Normalize inventory medicine names for comparison
-          const inventoryMedicines = inventoryItems.map((item, index) => {
-            const normalized = this.normalizeMedicineName(item.medicineName);
-            console.log(`  ${index + 1}. "${item.medicineName}" -> normalized: "${normalized}" (Qty: ${item.quantityAvailable}, Price: $${item.pricePerUnit}, Status: ${item.status})`);
-            return {
-              original: item.medicineName,
-              normalized: normalized,
-              quantity: item.quantityAvailable,
-              price: item.pricePerUnit,
-              status: item.status,
-              itemId: item._id
-            };
-          });
-
-          if (inventoryMedicines.length === 0) {
-            console.log(`  📭 No medicines in stock at ${pharmacy.name} matching criteria`);
-          }
-
-          // Check if all required medicines are available
-          console.log(`\n🔍 Matching required medicines against pharmacy inventory:`);
-          const availableMedications = [];
-          const missingMedications = [];
-
-          for (let i = 0; i < requiredMedicines.length; i++) {
-            const requiredMed = requiredMedicines[i];
-            console.log(`\n  🎯 Looking for: "${requiredMed}"`);
-
-            // Try different matching strategies
-            let found = null;
-            let matchType = '';
-
-            // Strategy 1: Exact normalized match
-            found = inventoryMedicines.find(inv => inv.normalized === requiredMed);
-            if (found) {
-              matchType = 'exact';
-            } else {
-              // Strategy 2: Inventory contains required medicine name
-              found = inventoryMedicines.find(inv => inv.normalized.includes(requiredMed));
-              if (found) {
-                matchType = 'inventory_contains_required';
-              } else {
-                // Strategy 3: Required medicine name contains inventory name
-                found = inventoryMedicines.find(inv => requiredMed.includes(inv.normalized));
-                if (found) {
-                  matchType = 'required_contains_inventory';
-                }
-              }
-            }
-
-            if (found) {
-              console.log(`    ✅ MATCH FOUND (${matchType}): "${found.original}" (normalized: "${found.normalized}")`);
-              console.log(`       📊 Stock: ${found.quantity} units, Price: $${found.price}, Status: ${found.status}`);
-
-              availableMedications.push({
-                required: requiredMed,
-                available: found.original,
-                quantity: found.quantity,
-                price: found.price,
-                status: found.status,
-                matchType: matchType,
-                inventoryId: found.itemId
-              });
-            } else {
-              console.log(`    ❌ NO MATCH FOUND`);
-              console.log(`       🔍 Tried matching "${requiredMed}" against:`);
-              inventoryMedicines.forEach((inv, idx) => {
-                console.log(`         ${idx + 1}. "${inv.normalized}" (from "${inv.original}")`);
-              });
-              missingMedications.push(requiredMed);
-            }
-          }
-
-          console.log(`\n📋 Matching Summary for ${pharmacy.name}:`);
+          console.log(`\n📋 Enhanced Matching Summary for ${pharmacy.name}:`);
           console.log(`   ✅ Available: ${availableMedications.length}/${requiredMedicines.length} medicines`);
           console.log(`   ❌ Missing: ${missingMedications.length} medicines`);
 
           if (availableMedications.length > 0) {
             console.log(`   📦 Available medicines:`);
             availableMedications.forEach((med, idx) => {
-              console.log(`     ${idx + 1}. "${med.required}" -> "${med.available}" (${med.matchType} match)`);
+              console.log(`     ${idx + 1}. "${med.required}" -> "${med.available}" (${med.matchType} match, Source: ${med.source})`);
             });
           }
 
@@ -434,7 +341,8 @@ class PrescriptionRequestMatchingService {
               owner: pharmacy.owner,
               location: pharmacy.location,
               availabilityScore: availabilityScore,
-              estimatedFulfillmentTime: '2-4 hours' // Default estimate
+              estimatedFulfillmentTime: '2-4 hours', // Default estimate
+              matchingDetails: matchingDetails // Enhanced matching information
             });
 
             console.log(`🎉 ✅ PHARMACY QUALIFIED: ${pharmacy.name}`);
@@ -471,63 +379,7 @@ class PrescriptionRequestMatchingService {
         });
       } else {
         console.log(`\n⚠️ No pharmacies found that have ALL required medicines in stock within ${maxDistance}km`);
-
-        // If no matching pharmacies found, let's do some debugging
-        console.log(`\n🔍 DEBUGGING: Why no pharmacies matched?`);
-
-        // Check total inventory items in database
-        const totalInventoryItems = await InventoryItem.countDocuments();
-        console.log(`   📦 Total inventory items in database: ${totalInventoryItems}`);
-
-        if (totalInventoryItems === 0) {
-          console.log(`   ❌ No inventory items exist in the database!`);
-          console.log(`   💡 Suggestion: Add some inventory items to pharmacies first`);
-        } else {
-          // Check inventory by pharmacy
-          const inventoryByPharmacy = await InventoryItem.aggregate([
-            {
-              $group: {
-                _id: '$pharmacyId',
-                count: { $sum: 1 },
-                availableCount: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $and: [
-                          { $gt: ['$quantityAvailable', 0] },
-                          { $in: ['$status', ['available', 'low-stock']] }
-                        ]
-                      },
-                      1,
-                      0
-                    ]
-                  }
-                }
-              }
-            }
-          ]);
-
-          console.log(`   📊 Inventory distribution by pharmacy:`);
-          inventoryByPharmacy.forEach((inv, idx) => {
-            console.log(`     ${idx + 1}. Pharmacy ${inv._id}: ${inv.availableCount}/${inv.count} items available`);
-          });
-
-          // Check if any inventory items match our required medicines
-          console.log(`\n   🔍 Checking if any inventory items match required medicines:`);
-          for (const requiredMed of requiredMedicines) {
-            const matchingItems = await InventoryItem.find({
-              $or: [
-                { medicineName: new RegExp(requiredMed, 'i') },
-                { medicineName: new RegExp(requiredMed.replace(/\s+/g, '.*'), 'i') }
-              ]
-            }).select('medicineName pharmacyId quantityAvailable status');
-
-            console.log(`     "${requiredMed}": ${matchingItems.length} potential matches found`);
-            matchingItems.forEach((item, idx) => {
-              console.log(`       ${idx + 1}. "${item.medicineName}" at pharmacy ${item.pharmacyId} (Qty: ${item.quantityAvailable}, Status: ${item.status})`);
-            });
-          }
-        }
+        await this.debugNoMatches(requiredMedicines);
       }
 
       return matchingPharmacies;
@@ -539,39 +391,282 @@ class PrescriptionRequestMatchingService {
   }
 
   /**
-   * Check medication availability in a pharmacy's inventory
+   * Enhanced medication availability check using both Medicine schema and Inventory
    * @param {string} pharmacyId - Pharmacy ID
-   * @param {Array} medications - Array of medication objects
-   * @returns {Array} Array of availability information
+   * @param {Array} requiredMedicines - Array of normalized medicine names
+   * @returns {Object} Enhanced availability information
    */
+  async checkEnhancedMedicationAvailability(pharmacyId, requiredMedicines) {
+    console.log(`🔍 Enhanced medication availability check for pharmacy ${pharmacyId}`);
+    console.log(`💊 Checking ${requiredMedicines.length} required medicines`);
+
+    const availableMedications = [];
+    const missingMedications = [];
+    const matchingDetails = {
+      medicineSchemaMatches: 0,
+      inventoryMatches: 0,
+      totalQueries: 0,
+      searchStrategies: {}
+    };
+
+    for (const requiredMed of requiredMedicines) {
+      console.log(`\n🎯 Looking for: "${requiredMed}"`);
+      let found = false;
+      let matchResult = null;
+      matchingDetails.totalQueries++;
+
+      // Strategy 1: Search in Medicine schema first (more comprehensive)
+      console.log(`  📚 Searching in Medicine schema...`);
+      try {
+        const medicineMatches = await Medicine.find({
+          $and: [
+            {
+              $or: [
+                { name: new RegExp(requiredMed, 'i') },
+                { brandName: new RegExp(requiredMed, 'i') },
+                { genericName: new RegExp(requiredMed, 'i') },
+                { alternativeNames: { $in: [new RegExp(requiredMed, 'i')] } },
+                { searchTags: { $in: [new RegExp(requiredMed, 'i')] } },
+                { 'composition.activeIngredient': new RegExp(requiredMed, 'i') }
+              ]
+            },
+            {
+              status: 'active',
+              verificationStatus: 'verified'
+            }
+          ]
+        }).select('name brandName genericName composition pricing therapeutic dosageForm pharmacyInventory').limit(5);
+
+        console.log(`    🔍 Medicine schema matches: ${medicineMatches.length}`);
+
+        if (medicineMatches.length > 0) {
+          // Found in Medicine schema, now check if pharmacy has inventory for any of these
+          for (const medicine of medicineMatches) {
+            const inventoryCheck = await this.checkInventoryForMedicine(pharmacyId, medicine);
+            if (inventoryCheck.available) {
+              matchResult = {
+                required: requiredMed,
+                available: inventoryCheck.inventoryItem.medicineName,
+                quantity: inventoryCheck.inventoryItem.quantityAvailable,
+                price: inventoryCheck.inventoryItem.pricePerUnit,
+                status: inventoryCheck.inventoryItem.status,
+                matchType: 'medicine_schema_with_inventory',
+                source: 'medicine_schema',
+                inventoryId: inventoryCheck.inventoryItem._id,
+                medicineId: medicine._id,
+                medicineDetails: {
+                  name: medicine.name,
+                  brandName: medicine.brandName,
+                  genericName: medicine.genericName,
+                  therapeuticClass: medicine.therapeutic?.therapeuticClass,
+                  dosageForm: medicine.dosageForm?.form,
+                  composition: medicine.composition
+                }
+              };
+              found = true;
+              matchingDetails.medicineSchemaMatches++;
+              console.log(`    ✅ MEDICINE SCHEMA MATCH: "${medicine.name}" found in inventory`);
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`    ⚠️ Medicine schema search failed:`, error.message);
+      }
+
+      // Note: Direct inventory search removed - using Medicine schema only
+      if (!found) {
+        console.log(`    ❌ NO MATCH FOUND for "${requiredMed}"`);
+      }
+
+      // Record the result
+      if (found && matchResult) {
+        availableMedications.push(matchResult);
+        console.log(`    ✅ FINAL MATCH: "${matchResult.required}" -> "${matchResult.available}" (Source: ${matchResult.source})`);
+      } else {
+        missingMedications.push(requiredMed);
+        console.log(`    ❌ NO MATCH FOUND for "${requiredMed}"`);
+      }
+    }
+
+    console.log(`\n📊 Enhanced Search Summary:`);
+    console.log(`   🎯 Total medicines searched: ${requiredMedicines.length}`);
+    console.log(`   ✅ Found: ${availableMedications.length}`);
+    console.log(`   ❌ Missing: ${missingMedications.length}`);
+    console.log(`   📚 Medicine schema matches: ${matchingDetails.medicineSchemaMatches}`);
+    console.log(`   📦 Direct inventory matches: ${matchingDetails.inventoryMatches}`);
+
+    return {
+      availableMedications,
+      missingMedications,
+      matchingDetails
+    };
+  }
+
+  /**
+   * Check if pharmacy has inventory for a specific medicine from Medicine schema
+   * @param {string} pharmacyId - Pharmacy ID
+   * @param {Object} medicine - Medicine object from Medicine schema
+   * @returns {Object} Availability result
+   */
+  async checkInventoryForMedicine(pharmacyId, medicine) {
+    try {
+      console.log(`🔍 Checking inventory for medicine: ${medicine.name}`);
+      console.log(`   📋 Pharmacy ID: ${pharmacyId}`);
+      console.log(`   📦 Medicine has pharmacyInventory: ${medicine.pharmacyInventory ? 'YES' : 'NO'}`);
+      
+      if (!medicine.pharmacyInventory || !Array.isArray(medicine.pharmacyInventory)) {
+        console.log(`   ❌ Medicine ${medicine.name} has no pharmacyInventory array`);
+        return {
+          available: false,
+          inventoryItem: null,
+          matchedTerm: null
+        };
+      }
+      
+      console.log(`   📊 Total inventory entries: ${medicine.pharmacyInventory.length}`);
+      
+      // Check if this medicine has inventory for the specified pharmacy
+      const pharmacyInventory = medicine.pharmacyInventory.find(inv => {
+        const matches = inv.pharmacyId.toString() === pharmacyId.toString() &&
+          inv.quantityAvailable > 0 &&
+          ['available', 'low-stock'].includes(inv.status);
+        
+        console.log(`     🏥 Inventory entry: pharmacyId=${inv.pharmacyId}, qty=${inv.quantityAvailable}, status=${inv.status}, matches=${matches}`);
+        return matches;
+      });
+
+      if (pharmacyInventory) {
+        console.log(`   ✅ Found matching inventory for pharmacy ${pharmacyId}`);
+        return {
+          available: true,
+          inventoryItem: {
+            medicineName: medicine.name,
+            brandName: medicine.brandName,
+            quantityAvailable: pharmacyInventory.quantityAvailable,
+            pricePerUnit: pharmacyInventory.pricePerUnit || pharmacyInventory.sellingPrice,
+            status: pharmacyInventory.status,
+            _id: pharmacyInventory._id
+          },
+          matchedTerm: medicine.name
+        };
+      }
+
+      console.log(`   ❌ No matching inventory found for pharmacy ${pharmacyId}`);
+      return {
+        available: false,
+        inventoryItem: null,
+        matchedTerm: null
+      };
+    } catch (error) {
+      console.error(`❌ Error checking inventory for medicine ${medicine.name}:`, error.message);
+      console.error(`   Stack trace:`, error.stack);
+      return {
+        available: false,
+        inventoryItem: null,
+        matchedTerm: null
+      };
+    }
+  }
+
+
+
+  /**
+   * Debug function when no matches found (Updated for Medicine schema)
+   */
+  async debugNoMatches(requiredMedications) {
+    console.log('\n🔍 DEBUG: Investigating why no pharmacy matches were found');
+    
+    const totalMedicines = await Medicine.countDocuments();
+    console.log(`   🧬 Total medicines in database: ${totalMedicines}`);
+    
+    // Remove inventory checking since we're using Medicine schema only
+    console.log(`   📦 Using Medicine schema with embedded pharmacy inventory`);
+    
+    if (totalMedicines === 0) {
+      console.log('   ❌ No medicines found in database!');
+      return;
+    }
+    
+    console.log('\n🎯 Searching for each required medication:');
+    for (const requiredMed of requiredMedications) {
+      console.log(`\n   🔍 Searching for: "${requiredMed}"`);
+      
+      // Search Medicine schema
+      const medicineMatches = await Medicine.find({
+        $or: [
+          { name: new RegExp(requiredMed, 'i') },
+          { brandName: new RegExp(requiredMed, 'i') },
+          { genericName: new RegExp(requiredMed, 'i') }
+        ],
+        status: 'active'
+      }).select('name brandName genericName pharmacyInventory');
+      
+      console.log(`     "${requiredMed}": ${medicineMatches.length} Medicine matches`);
+      medicineMatches.forEach((medicine, idx) => {
+        const totalInventory = medicine.pharmacyInventory.length;
+        const availableInventory = medicine.pharmacyInventory.filter(inv => 
+          ['available', 'low-stock'].includes(inv.status) && inv.quantityAvailable > 0
+        ).length;
+        console.log(`       ${idx + 1}. "${medicine.name}" - ${availableInventory}/${totalInventory} pharmacy locations available`);
+      });
+    }
+  }
+
   async checkMedicationAvailability(pharmacyId, medications) {
     try {
       const availabilityResults = await Promise.all(
         medications.map(async (medication) => {
           try {
-            // Search for medication in pharmacy inventory using InventoryItem model
-            const inventoryItems = await InventoryItem.find({
-              pharmacyId: pharmacyId,
+            // Search using Medicine schema with embedded pharmacy inventory
+            const medicines = await Medicine.find({
               $or: [
-                { medicineName: new RegExp(medication.name, 'i') },
+                { name: new RegExp(medication.name, 'i') },
                 { brandName: new RegExp(medication.name, 'i') }
               ],
-              quantityAvailable: { $gt: 0 },
-              status: { $in: ['available', 'low-stock'] }
-            }).select('medicineName brandName quantityAvailable pricePerUnit');
+              'pharmacyInventory': {
+                $elemMatch: {
+                  pharmacyId: pharmacyId,
+                  quantityAvailable: { $gt: 0 },
+                  status: { $in: ['available', 'low-stock'] }
+                }
+              }
+            }).select('name brandName pharmacyInventory');
 
-            const isAvailable = inventoryItems.length > 0;
-            const bestMatch = inventoryItems[0];
+            const isAvailable = medicines.length > 0;
+            let bestMatch = null;
+            let availableAlternatives = [];
+
+            if (medicines.length > 0) {
+              // Get the pharmacy inventory for this specific pharmacy
+              medicines.forEach(medicine => {
+                const pharmacyInv = medicine.pharmacyInventory.find(inv => 
+                  inv.pharmacyId.toString() === pharmacyId.toString() && 
+                  inv.quantityAvailable > 0 &&
+                  ['available', 'low-stock'].includes(inv.status)
+                );
+                
+                if (pharmacyInv) {
+                  const alternative = {
+                    name: medicine.name,
+                    brandName: medicine.brandName,
+                    currentStock: pharmacyInv.quantityAvailable,
+                    unitPrice: pharmacyInv.pricePerUnit
+                  };
+                  
+                  availableAlternatives.push(alternative);
+                  
+                  if (!bestMatch) {
+                    bestMatch = pharmacyInv;
+                  }
+                }
+              });
+            }
 
             return {
               requestedMedication: medication.name,
               isAvailable,
-              availableAlternatives: inventoryItems.map(item => ({
-                name: item.medicineName,
-                brandName: item.brandName,
-                currentStock: item.quantityAvailable,
-                unitPrice: item.pricePerUnit
-              })),
+              availableAlternatives,
               estimatedPrice: bestMatch?.pricePerUnit || 0,
               stockLevel: bestMatch?.quantityAvailable || 0
             };

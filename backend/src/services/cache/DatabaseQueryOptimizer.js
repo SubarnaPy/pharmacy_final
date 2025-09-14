@@ -59,13 +59,11 @@ class DatabaseQueryOptimizer {
 
   async cacheQueryResult(queryKey, result, ttl) {
     try {
-      // Cache in Redis
-      await redisCacheService.set(`query:${queryKey}`, result, ttl);
-      
-      // Cache in memory for faster access
+      // Cache only in memory for faster access
       this.queryCache.set(queryKey, {
         data: result,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        expires: Date.now() + (ttl * 1000)
       });
 
       // Limit memory cache size

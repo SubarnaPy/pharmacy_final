@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import io from 'socket.io-client';
 import { toast } from 'react-toastify';
-import apiClient from '../api/apiClient';
 
 /**
  * Custom hook for managing chat notifications
@@ -53,18 +52,13 @@ const useChatNotifications = (userRole) => {
     };
   }, []);
 
-  // Fetch initial unread counts
+  // Fetch initial unread counts - Temporarily disabled for new OrderChat system
   const fetchUnreadCounts = useCallback(async () => {
-    try {
-      const response = await apiClient.get('/chat/notifications/unread-counts');
-      setUnreadCounts(response.data.data);
-      
-      // Calculate total unread
-      const total = Object.values(response.data.data).reduce((sum, conv) => sum + conv.unreadCount, 0);
-      setTotalUnread(total);
-    } catch (error) {
-      console.error('Error fetching unread counts:', error);
-    }
+    console.log('📊 Unread count fetching temporarily disabled for new OrderChat system');
+    // TODO: Implement unread counts for OrderChat system
+    // For now, return empty data to prevent errors
+    setUnreadCounts({});
+    setTotalUnread(0);
   }, []);
 
   // Handle new chat notification

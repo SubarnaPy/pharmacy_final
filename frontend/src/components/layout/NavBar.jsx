@@ -107,6 +107,7 @@ function NavBar() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-2">
               <NavLink to="/" icon={HomeIcon}>Home</NavLink>
+              <NavLink to="/medicines" icon={HeartIcon}>Medicine Search</NavLink>
               {isAuthenticated && (
                 <NavLink to="/dashboard" icon={ChartBarIcon}>Dashboard</NavLink>
               )}

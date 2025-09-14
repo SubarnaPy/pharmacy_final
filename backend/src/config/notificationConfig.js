@@ -4,29 +4,33 @@
  */
 
 const notificationConfig = {
-  // Queue configuration
+  // Queue configuration (in-memory)
   queue: {
     queueName: 'healthcare_notifications',
     maxRetries: 3,
     retryDelay: 60000, // 1 minute
     processingTimeout: 300000, // 5 minutes
+    useMemory: true, // In-memory queue instead of Redis
   },
 
-  // Redis configuration
-  redis: {
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
-    retryAttempts: 3,
-    retryDelay: 1000
+  // Cache configuration (in-memory only)
+  cache: {
+    enabled: true,
+    type: 'memory', // Memory-only caching
+    maxSize: 10000, // Maximum number of cached items
+    defaultTTL: 300 // 5 minutes default TTL
   },
 
-  // Service configuration
+  // Service configuration (updated for in-memory)
   service: {
     templateCacheSize: 1000,
     preferencesCacheSize: 5000,
     analyticsBufferSize: 100,
     processingInterval: 5000, // 5 seconds
     analyticsInterval: 3600000, // 1 hour
-    scheduledCheckInterval: 60000 // 1 minute
+    scheduledCheckInterval: 60000, // 1 minute
+    memoryCleanupInterval: 300000, // 5 minutes - cleanup old data
+    maxMemoryUsage: 500 // MB - restart if memory usage exceeds this
   },
 
   // Channel configurations

@@ -3,7 +3,7 @@ import User from '../models/User.js';
 import UserNotificationService from '../services/UserNotificationService.js';
 import AppError from '../utils/AppError.js';
 // import Pharmacy from '../models/Pharmacy.js';
-// import { Supplier, Medication, Batch, PharmacyLocation, InventoryAlert } from '../models/Inventory.js';
+// Legacy inventory models removed - now using Medicine schema with embedded pharmacy inventory
 import PrescriptionRequest from '../models/PrescriptionRequest.js';
 import Notification from '../models/Notification.js';
 import Chat from '../models/Chat.js';
@@ -656,7 +656,8 @@ export const getDashboardStats = async (req, res, next) => {
     let lowStockItems = 0;
     
     try {
-      const { Inventory } = await import('../models/Inventory.js');
+      // Legacy inventory system removed - using Medicine schema with embedded pharmacy inventory
+      const { Medicine } = await import('../models/Medicine.js');
       totalInventoryItems = await Inventory.countDocuments({
         pharmacyId: pharmacy._id
       });

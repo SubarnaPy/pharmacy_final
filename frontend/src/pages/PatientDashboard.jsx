@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import {
   DocumentTextIcon,
   ClockIcon,
@@ -16,7 +17,7 @@ import {
   BellIcon
 } from '@heroicons/react/24/outline';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate as useNav } from 'react-router-dom';
 import UserProfile from '../components/UserProfile';
 import HealthHistory from '../components/HealthHistory';
 import PrescriptionUpload from '../components/PrescriptionUpload';
@@ -28,10 +29,19 @@ import PaymentManagement from '../components/PaymentManagement';
 import PrescriptionRequestTracker from '../components/Patient/PrescriptionRequestTracker';
 import ConsultationList from '../components/consultation/ConsultationList';
 import DoctorBooking from '../components/Patient/DoctorBooking';
+import EnhancedDashboard from '../components/dashboard/EnhancedDashboard';
+import PatientConsultations from '../components/Patient/PatientConsultations';
+import PatientConsultationHistory from '../components/Patient/PatientConsultationHistory';
+import PatientChat from '../components/Patient/PatientChat';
+import ARPillScanner from '../components/Patient/ARPillScanner';
+import PharmacyResponseSelector from '../components/Patient/PharmacyResponseSelector';
+import MedicalDocuments from '../components/MedicalDocuments';
+import PatientPrescriptionHistory from '../components/Patient/PrescriptionHistory';
 
 function PatientDashboard() {
   const { user, isAuthenticated } = useSelector(state => state.auth);
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [quickStats, setQuickStats] = useState({
     activePrescriptions: 3,
@@ -45,6 +55,19 @@ function PatientDashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // Update activeSection based on current route
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/patient' || path === '/patient/') {
+      setActiveSection('dashboard');
+    } else {
+      const section = path.split('/patient/')[1];
+      if (section) {
+        setActiveSection(section);
+      }
+    }
+  }, [location.pathname]);
 
   const fetchDashboardData = async () => {
     try {
@@ -133,28 +156,28 @@ function PatientDashboard() {
           icon={DocumentTextIcon} 
           color="bg-emerald-500" 
           trend={12}
-          onClick={() => setActiveSection('prescription-history')}
+          onClick={() => navigate('/patient/prescription-history')}
         />
         <StatCard 
           label="Refills Due" 
           value={quickStats.pendingRefills} 
           icon={ClockIcon} 
           color="bg-yellow-500"
-          onClick={() => setActiveSection('reminders')}
+          onClick={() => navigate('/patient/reminders')}
         />
         <StatCard 
           label="Nearby Pharmacies" 
           value={quickStats.nearbyPharmacies} 
           icon={MapPinIcon} 
           color="bg-blue-500"
-          onClick={() => setActiveSection('find-pharmacy')}
+          onClick={() => navigate('/patient/find-pharmacy')}
         />
         <StatCard 
           label="Unread Messages" 
           value={quickStats.unreadMessages} 
           icon={ChatBubbleLeftRightIcon} 
           color="bg-purple-500"
-          onClick={() => setActiveSection('notifications')}
+          onClick={() => navigate('/patient/messages')}
         />
       </div>
 
@@ -169,14 +192,14 @@ function PatientDashboard() {
             icon={DocumentPlusIcon}
             title="Upload Prescription"
             description="Upload a new prescription for processing"
-            onClick={() => setActiveSection('upload-prescription')}
+            onClick={() => navigate('/patient/upload-prescription')}
             gradient="bg-gradient-to-r from-emerald-500 to-teal-500"
           />
           <QuickActionCard
             icon={DocumentTextIcon}
             title="My Requests"
             description="Track prescription requests and responses"
-            onClick={() => setActiveSection('prescription-requests')}
+            onClick={() => navigate('/patient/prescription-requests')}
             gradient="bg-gradient-to-r from-rose-500 to-pink-500"
             badge="New"
           />
@@ -184,7 +207,7 @@ function PatientDashboard() {
             icon={UserIcon}
             title="Book Doctor"
             description="Find and book appointments with doctors"
-            onClick={() => setActiveSection('book-doctor')}
+            onClick={() => navigate('/patient/doctor-book')}
             gradient="bg-gradient-to-r from-violet-500 to-purple-500"
             badge="1"
           />
@@ -192,21 +215,21 @@ function PatientDashboard() {
             icon={MapPinIcon}
             title="Find Pharmacies"
             description="Discover nearby pharmacies"
-            onClick={() => setActiveSection('find-pharmacy')}
+            onClick={() => navigate('/patient/find-pharmacy')}
             gradient="bg-gradient-to-r from-purple-500 to-pink-500"
           />
           <QuickActionCard
             icon={VideoCameraIcon}
             title="My Consultations"
             description="View and join consultations"
-            onClick={() => setActiveSection('my-consultations')}
+            onClick={() => navigate('/patient/consultations')}
             gradient="bg-gradient-to-r from-indigo-500 to-purple-500"
           />
           <QuickActionCard
             icon={BellIcon}
             title="Medication Reminders"
             description="Set up medication alerts"
-            onClick={() => setActiveSection('reminders')}
+            onClick={() => navigate('/patient/reminders')}
             gradient="bg-gradient-to-r from-yellow-500 to-orange-500"
             badge="2"
           />
@@ -214,16 +237,32 @@ function PatientDashboard() {
             icon={TruckIcon}
             title="Order Tracking"
             description="Track your prescription orders"
-            onClick={() => setActiveSection('order-tracking')}
+            onClick={() => navigate('/patient/order-tracking')}
             gradient="bg-gradient-to-r from-green-500 to-emerald-500"
             badge={quickStats.ordersInTransit > 0 ? quickStats.ordersInTransit.toString() : null}
           />
           <QuickActionCard
             icon={ShoppingCartIcon}
+            title="Medicine Search"
+            description="AI-powered medicine search and buying"
+            onClick={() => navigate('/medicines')}
+            gradient="bg-gradient-to-r from-blue-500 to-cyan-500"
+            badge="AI"
+          />
+          <QuickActionCard
+            icon={ShoppingCartIcon}
             title="My Orders"
             description="Manage and view all orders"
-            onClick={() => setActiveSection('order-management')}
+            onClick={() => navigate('/patient/order-management')}
             gradient="bg-gradient-to-r from-pink-500 to-rose-500"
+          />
+          <QuickActionCard
+            icon={ChatBubbleLeftRightIcon}
+            title="AI Health Features"
+            description="Access advanced AI-powered health tools"
+            onClick={() => navigate('/patient/ai-features')}
+            gradient="bg-gradient-to-r from-cyan-500 to-blue-500"
+            badge="New"
           />
         </div>
       </div>
@@ -324,19 +363,23 @@ function PatientDashboard() {
       case 'profile':
         return <UserProfile />;
       case 'health-history':
+        return <HealthHistory />;
       case 'medical-documents':
+        return <MedicalDocuments />;
       case 'test-results':
         return <HealthHistory />;
       case 'upload-prescription':
         return <PrescriptionUpload />;
+      case 'prescription-history':
+        return <PatientPrescriptionHistory />;
       case 'prescription-requests':
         return <PrescriptionRequestTracker />;
-      case 'book-doctor':
+      case 'doctor-book':
         return <DoctorBooking />;
       case 'find-pharmacy':
         return <PharmacySearch />;
-      case 'my-consultations':
-        return <ConsultationList />;
+      case 'consultations':
+        return <PatientConsultations />;
       case 'reminders':
         return <RefillReminders />;
       case 'order-tracking':
@@ -345,6 +388,8 @@ function PatientDashboard() {
         return <OrderManagement />;
       case 'payments':
         return <PaymentManagement />;
+      case 'ai-features':
+        return <EnhancedDashboard />;
       default:
         return (
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-lg">
@@ -373,11 +418,48 @@ function PatientDashboard() {
       <DashboardLayout
         userRole="patient"
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
+        onSectionChange={(section) => {
+          if (section === 'dashboard') {
+            navigate('/patient');
+          } else {
+            navigate(`/patient/${section}`);
+          }
+        }}
         showWelcome={activeSection === 'dashboard'}
         welcomeMessage={`Welcome back, ${user?.profile?.firstName || 'Patient'}! 👋`}
       >
-        {renderActiveSection()}
+        <Routes>
+          <Route index element={renderDashboardOverview()} />
+          <Route path="profile" element={<UserProfile />} />
+          <Route path="health-history" element={<HealthHistory />} />
+          <Route path="medical-documents" element={<MedicalDocuments />} />
+          <Route path="test-results" element={<HealthHistory />} />
+          <Route path="upload-prescription" element={<PrescriptionUpload />} />
+          <Route path="prescription-requests" element={<PrescriptionRequestTracker />} />
+          <Route path="doctor-book" element={<DoctorBooking />} />
+          <Route path="find-pharmacy" element={<PharmacySearch />} />
+          <Route path="consultations" element={<PatientConsultations />} />
+          <Route path="consultation-history" element={<PatientConsultationHistory />} />
+          <Route path="reminders" element={<RefillReminders />} />
+          <Route path="order-tracking" element={<OrderTracking />} />
+          <Route path="order-management" element={<OrderManagement />} />
+          <Route path="payments" element={<PaymentManagement />} />
+          <Route path="messages" element={<PatientChat />} />
+          <Route path="ar-scanner" element={<ARPillScanner />} />
+          <Route path="pharmacy-response" element={<PharmacyResponseSelector />} />
+          <Route path="ai-features" element={<EnhancedDashboard />} />
+          <Route 
+            path="*" 
+            element={
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-lg">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                  Page Not Found
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">This section is coming soon...</p>
+              </div>
+            } 
+          />
+        </Routes>
       </DashboardLayout>
       {/* Floating Chatbot Button */}
       <button
@@ -386,7 +468,7 @@ function PatientDashboard() {
         aria-label="Open Chatbot"
       >
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75c4.556 0 8.25-2.807 8.25-6.25 0-3.444-3.694-6.25-8.25-6.25S3.75 9.056 3.75 12.5c0 3.443 3.694 6.25 8.25 6.25z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75c4.556 0 8.25-2.807 8.25-6.25 0-3.444-3.694-6.25-8.25S3.75 9.056 3.75 12.5c0 3.443 3.694 6.25 8.25 6.25z" />
           <circle cx="12" cy="12" r="2.5" fill="currentColor" />
         </svg>
       </button>

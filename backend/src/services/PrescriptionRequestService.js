@@ -13,7 +13,7 @@ class PrescriptionRequestService extends EventEmitter {
   constructor(webSocketService = null) {
     super();
     this.notificationService = new NotificationService(webSocketService);
-    this.pharmacyMatchingService = new PharmacyMatchingService();
+    this.pharmacyMatchingService = new PharmacyMatchingService(webSocketService);
     
     // Set up automated reminder scheduling
     this.setupAutomatedReminders();

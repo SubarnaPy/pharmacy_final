@@ -13,17 +13,38 @@ export const getAvailableDoctors = asyncHandler(async (req, res) => {
   const doctors = await Doctor.find({ 
     isAvailable: true,
     isAcceptingAppointments: true 
-  }).populate('user', 'name email');
+  }).populate('user', 'name email profile');
   
   const formattedDoctors = doctors.map(doctor => ({
     id: doctor._id,
-    name: doctor.user?.name || 'Doctor',
+    name: doctor.user?.name || doctor.user?.profile?.firstName + ' ' + doctor.user?.profile?.lastName || 'Doctor',
     specialty: doctor.specializations?.[0] || 'General Medicine',
+    specializations: doctor.specializations || ['General Medicine'],
     experience: `${doctor.experience?.totalYears || 0} years`,
+    experienceYears: doctor.experience?.totalYears || 0,
+    currentPosition: doctor.experience?.currentPosition || 'Doctor',
     rating: doctor.ratings?.average || 4.5,
+    totalReviews: doctor.ratings?.totalReviews || 0,
     consultationFee: doctor.consultationModes?.video?.fee || 100,
     location: doctor.workplace?.[0]?.hospitalName || 'Not specified',
-    available: doctor.isAvailable && doctor.isAcceptingAppointments
+    bio: doctor.bio || 'Experienced healthcare professional dedicated to providing quality medical care.',
+    languages: doctor.languages || ['English'],
+    qualifications: doctor.qualifications || [],
+    consultationModes: {
+      video: doctor.consultationModes?.video || { available: true, fee: 100, duration: 30 },
+      chat: doctor.consultationModes?.chat || { available: false, fee: 50, duration: 30 },
+      phone: doctor.consultationModes?.phone || { available: false, fee: 75, duration: 30 },
+      inPerson: doctor.consultationModes?.inPerson || { available: false, fee: 150, duration: 60 }
+    },
+    profileImage: doctor.profileImage || null,
+    available: doctor.isAvailable && doctor.isAcceptingAppointments,
+    stats: {
+      totalConsultations: doctor.stats?.totalConsultations || 0,
+      completedConsultations: doctor.stats?.completedConsultations || 0,
+      patientsSeen: doctor.stats?.patientsSeen || 0,
+      responseTime: doctor.stats?.responseTime || 15
+    },
+    nextAvailableSlot: null // Will be calculated separately if needed
   }));
   
   res.status(200).json(new ApiResponse(

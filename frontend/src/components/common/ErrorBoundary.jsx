@@ -23,12 +23,12 @@ class ErrorBoundary extends React.Component {
     });
 
     // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.MODE === 'development') {
       console.error('ErrorBoundary caught an error:', error, errorInfo);
     }
 
     // In production, you might want to log to an error reporting service
-    if (process.env.NODE_ENV === 'production' && this.props.onError) {
+    if (import.meta.env.MODE === 'production' && this.props.onError) {
       this.props.onError(error, errorInfo);
     }
   }
@@ -61,7 +61,7 @@ class ErrorBoundary extends React.Component {
               {this.props.message || 'An unexpected error occurred. Please try again.'}
             </p>
             
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.MODE === 'development' && this.state.error && (
               <details className="mb-4 text-left">
                 <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
                   Error Details

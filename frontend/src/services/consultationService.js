@@ -13,7 +13,7 @@ class ConsultationService {
     if (params.limit) queryParams.append('limit', params.limit);
 
     const response = await api.get(`/consultations/my-bookings?${queryParams.toString()}`);
-    return response.data;
+    return response.data.data; // Return the data object which contains consultations and pagination
   }
 
   // Get consultation details (updated for new route structure)

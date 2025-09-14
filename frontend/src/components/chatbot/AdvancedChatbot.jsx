@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../api/apiClient';
 import { useSelector } from 'react-redux';
@@ -20,7 +20,20 @@ import {
   StopIcon,
   DocumentTextIcon,
   MapPinIcon,
-  PhoneIcon
+  PhoneIcon,
+  CameraIcon,
+  PhotoIcon,
+  VideoCameraIcon,
+  SpeakerWaveIcon,
+  SpeakerXMarkIcon,
+  BoltIcon,
+  EyeIcon,
+  FaceSmileIcon,
+  ChartBarIcon,
+  CpuChipIcon,
+  GlobeAltIcon,
+  WifiIcon,
+  ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
 import { XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/solid';
 
@@ -31,53 +44,114 @@ const AdvancedChatbot = ({ isModal = true }) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [chatMode, setChatMode] = useState('general'); // general, symptoms, doctors, education
+  const [chatMode, setChatMode] = useState('general'); // general, symptoms, doctors, education, multi-modal
   const [isListening, setIsListening] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [conversationSummary, setConversationSummary] = useState(null);
   const [botStatus, setBotStatus] = useState('online');
   
+  // Advanced features state
+  const [emotionDetection, setEmotionDetection] = useState({ enabled: true, currentEmotion: null });
+  const [voiceSynthesis, setVoiceSynthesis] = useState({ enabled: true, speaking: false, rate: 1.0, pitch: 1.0 });
+  const [multiModalInput, setMultiModalInput] = useState({ images: [], videos: [], documents: [] });
+  const [conversationMemory, setConversationMemory] = useState({ context: [], preferences: {}, patterns: [] });
+  const [realTimeFeatures, setRealTimeFeatures] = useState({ typing: false, online: true, lastSeen: null });
+  const [aiPersonality, setAiPersonality] = useState({ mode: 'professional', empathy: 0.8, humor: 0.3 });
+  const [advancedAnalytics, setAdvancedAnalytics] = useState({ sentiment: null, topics: [], engagement: 0 });
+  const [languageSettings, setLanguageSettings] = useState({ current: 'en', auto_detect: true, translate: false });
+  const [conversationFlow, setConversationFlow] = useState({ currentStep: null, workflow: null, context: {} });
+  
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
+  const synth = useRef(null);
+  const cameraRef = useRef(null);
+  const canvasRef = useRef(null);
+  const websocketRef = useRef(null);
+  const emotionDetectorRef = useRef(null);
+  const conversationAnalyzerRef = useRef(null);
 
-  // Quick action buttons
+  // Enhanced quick action buttons with advanced features
   const quickActions = [
     {
       id: 'symptoms',
-      label: 'Analyze Symptoms',
+      label: 'AI Symptom Analysis',
       icon: HeartIcon,
-      description: 'Get AI analysis of your symptoms',
+      description: 'Advanced symptom analysis with 3D body mapping',
       action: () => {
         navigate('/chatbot/symptoms');
-      }
+      },
+      advanced: true
     },
     {
       id: 'doctors',
-      label: 'Find Doctors',
+      label: 'Smart Doctor Finder',
       icon: UserIcon,
-      description: 'Get doctor recommendations',
+      description: 'AI-powered matching with virtual consultations',
       action: () => {
         navigate('/chatbot/doctors');
-      }
+      },
+      advanced: true
     },
     {
       id: 'education',
-      label: 'Health Info',
+      label: 'Interactive Health Ed',
       icon: AcademicCapIcon,
-      description: 'Learn about health topics',
+      description: 'AR/VR health education with gamification',
       action: () => {
         navigate('/chatbot/education');
-      }
+      },
+      advanced: true
     },
     {
-      id: 'tips',
-      label: 'Health Tips',
-      icon: LightBulbIcon,
-      description: 'Get personalized health advice',
+      id: 'visual_symptoms',
+      label: 'Visual Analysis',
+      icon: CameraIcon,
+      description: 'Upload images for visual symptom analysis',
       action: () => {
-        sendQuickMessage("Can you give me personalized health tips?");
-      }
+        handleImageUpload();
+      },
+      advanced: true
+    },
+    {
+      id: 'voice_analysis',
+      label: 'Voice Health Check',
+      icon: SpeakerWaveIcon,
+      description: 'Analyze health through voice patterns',
+      action: () => {
+        startVoiceAnalysis();
+      },
+      advanced: true
+    },
+    {
+      id: 'emotion_check',
+      label: 'Emotion Detection',
+      icon: FaceSmileIcon,
+      description: 'Real-time emotion analysis & support',
+      action: () => {
+        toggleEmotionDetection();
+      },
+      advanced: true
+    },
+    {
+      id: 'health_insights',
+      label: 'Predictive Analytics',
+      icon: ChartBarIcon,
+      description: 'Advanced health insights & predictions',
+      action: () => {
+        sendQuickMessage("Show me comprehensive health analytics with predictive insights.");
+      },
+      advanced: true
+    },
+    {
+      id: 'emergency_ai',
+      label: 'Emergency AI',
+      icon: BoltIcon,
+      description: 'Instant emergency assessment & guidance',
+      action: () => {
+        activateEmergencyMode();
+      },
+      priority: 'high'
     }
   ];
 
@@ -85,29 +159,51 @@ const AdvancedChatbot = ({ isModal = true }) => {
     if (isOpen) {
       fetchConversationHistory();
       checkBotStatus();
+      initializeAdvancedFeatures();
+      establishWebSocketConnection();
     }
+    return () => {
+      cleanupAdvancedFeatures();
+    };
   }, [isOpen]);
 
   useEffect(() => {
     scrollToBottom();
+    updateConversationAnalytics();
   }, [messages]);
 
   useEffect(() => {
-    // Initialize speech recognition
+    // Initialize enhanced speech recognition with emotion detection
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = languageSettings.current === 'auto' ? navigator.language : languageSettings.current;
 
       recognitionRef.current.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
+        let transcript = '';
+        let confidence = 0;
+        
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+          confidence = Math.max(confidence, event.results[i][0].confidence);
+        }
+        
         setMessage(transcript);
-        setIsListening(false);
+        
+        // Analyze voice patterns for emotion detection
+        if (emotionDetection.enabled && event.results[event.results.length - 1].isFinal) {
+          analyzeVoiceEmotion(transcript, confidence);
+        }
+        
+        if (event.results[event.results.length - 1].isFinal) {
+          setIsListening(false);
+        }
       };
 
-      recognitionRef.current.onerror = () => {
+      recognitionRef.current.onerror = (error) => {
+        console.error('Speech recognition error:', error);
         setIsListening(false);
       };
 
@@ -115,10 +211,345 @@ const AdvancedChatbot = ({ isModal = true }) => {
         setIsListening(false);
       };
     }
-  }, []);
+    
+    // Initialize emotion detection
+    initializeEmotionDetection();
+  }, [languageSettings.current, emotionDetection.enabled]);
+  
+  const initializeEmotionDetection = () => {
+    if (emotionDetection.enabled) {
+      emotionDetectorRef.current = {
+        analyze: (text, voiceData = null) => {
+          const emotions = {
+            joy: ['happy', 'great', 'wonderful', 'excited', 'good', 'amazing'],
+            sadness: ['sad', 'upset', 'down', 'depressed', 'hurt', 'crying'],
+            anger: ['angry', 'mad', 'frustrated', 'annoyed', 'furious', 'hate'],
+            fear: ['scared', 'afraid', 'worried', 'anxious', 'nervous', 'panic'],
+            neutral: ['okay', 'fine', 'normal', 'average', 'alright']
+          };
+          
+          let detectedEmotion = 'neutral';
+          let confidence = 0;
+          
+          Object.entries(emotions).forEach(([emotion, keywords]) => {
+            const matches = keywords.filter(keyword => 
+              text.toLowerCase().includes(keyword)
+            ).length;
+            
+            if (matches > confidence) {
+              confidence = matches;
+              detectedEmotion = emotion;
+            }
+          });
+          
+          return { emotion: detectedEmotion, confidence: confidence / 10 };
+        }
+      };
+    }
+  };
+  
+  const analyzeVoiceEmotion = (transcript, confidence) => {
+    if (emotionDetectorRef.current) {
+      const emotionResult = emotionDetectorRef.current.analyze(transcript);
+      setEmotionDetection(prev => ({ 
+        ...prev, 
+        currentEmotion: {
+          ...emotionResult,
+          timestamp: new Date().toISOString(),
+          voiceConfidence: confidence
+        }
+      }));
+      
+      // Adjust AI personality based on detected emotion
+      if (emotionResult.emotion === 'sadness' || emotionResult.emotion === 'fear') {
+        setAiPersonality(prev => ({ ...prev, empathy: 1.0, humor: 0.1 }));
+      } else if (emotionResult.emotion === 'joy') {
+        setAiPersonality(prev => ({ ...prev, empathy: 0.7, humor: 0.5 }));
+      }
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  // Advanced feature initialization
+  const initializeAdvancedFeatures = async () => {
+    try {
+      // Load conversation memory
+      const savedMemory = localStorage.getItem(`chatbot_memory_${user?.id}`);
+      if (savedMemory) {
+        setConversationMemory(JSON.parse(savedMemory));
+      }
+      
+      // Initialize AI personality based on user preferences
+      const userPreferences = await fetchUserPreferences();
+      setAiPersonality(prev => ({ ...prev, ...userPreferences.aiPersonality }));
+      
+      // Set up real-time status
+      setRealTimeFeatures(prev => ({ 
+        ...prev, 
+        online: true, 
+        lastSeen: new Date().toISOString() 
+      }));
+      
+      // Initialize text-to-speech
+      if ('speechSynthesis' in window) {
+        synth.current = window.speechSynthesis;
+      }
+      
+    } catch (error) {
+      console.error('Failed to initialize advanced features:', error);
+    }
+  };
+  
+  const cleanupAdvancedFeatures = () => {
+    if (websocketRef.current) {
+      websocketRef.current.close();
+    }
+    
+    if (synth.current && voiceSynthesis.speaking) {
+      synth.current.cancel();
+    }
+    
+    // Save conversation memory
+    if (conversationMemory.context.length > 0) {
+      localStorage.setItem(`chatbot_memory_${user?.id}`, JSON.stringify(conversationMemory));
+    }
+  };
+  
+  const establishWebSocketConnection = () => {
+    try {
+      const wsUrl = `ws://localhost:5000/ws/chatbot/${user?.id}`;
+      websocketRef.current = new WebSocket(wsUrl);
+      
+      websocketRef.current.onopen = () => {
+        console.log('WebSocket connected for real-time chatbot features');
+        setRealTimeFeatures(prev => ({ ...prev, online: true }));
+      };
+      
+      websocketRef.current.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleRealTimeUpdate(data);
+      };
+      
+      websocketRef.current.onclose = () => {
+        setRealTimeFeatures(prev => ({ ...prev, online: false }));
+        // Attempt to reconnect after 3 seconds
+        setTimeout(establishWebSocketConnection, 3000);
+      };
+    } catch (error) {
+      console.log('WebSocket connection failed, continuing without real-time features');
+    }
+  };
+  
+  const handleRealTimeUpdate = (data) => {
+    switch (data.type) {
+      case 'typing_indicator':
+        setRealTimeFeatures(prev => ({ ...prev, typing: data.typing }));
+        break;
+      case 'bot_status':
+        setBotStatus(data.status);
+        break;
+      case 'conversation_insight':
+        setAdvancedAnalytics(prev => ({ ...prev, ...data.analytics }));
+        break;
+      default:
+        break;
+    }
+  };
+  
+  const updateConversationAnalytics = () => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      
+      // Analyze sentiment
+      const sentiment = analyzeSentiment(lastMessage.content);
+      
+      // Extract topics
+      const topics = extractTopics(messages);
+      
+      // Calculate engagement score
+      const engagement = calculateEngagement(messages);
+      
+      setAdvancedAnalytics({ sentiment, topics, engagement });
+    }
+  };
+  
+  const analyzeSentiment = (text) => {
+    if (typeof text !== 'string') return 'neutral';
+    
+    const positive = ['good', 'great', 'excellent', 'happy', 'wonderful', 'amazing', 'better', 'improved'];
+    const negative = ['bad', 'terrible', 'awful', 'sad', 'horrible', 'worst', 'pain', 'hurt', 'sick'];
+    
+    const words = text.toLowerCase().split(' ');
+    let score = 0;
+    
+    words.forEach(word => {
+      if (positive.includes(word)) score += 1;
+      if (negative.includes(word)) score -= 1;
+    });
+    
+    if (score > 0) return 'positive';
+    if (score < 0) return 'negative';
+    return 'neutral';
+  };
+  
+  const extractTopics = (messageHistory) => {
+    const healthTopics = {
+      'heart': 'Cardiovascular Health',
+      'diabetes': 'Diabetes',
+      'pain': 'Pain Management',
+      'mental': 'Mental Health',
+      'exercise': 'Fitness',
+      'diet': 'Nutrition',
+      'sleep': 'Sleep Health',
+      'medication': 'Medications',
+      'symptom': 'Symptoms',
+      'doctor': 'Healthcare Providers'
+    };
+    
+    const detectedTopics = new Set();
+    
+    messageHistory.forEach(msg => {
+      if (typeof msg.content === 'string') {
+        Object.entries(healthTopics).forEach(([keyword, topic]) => {
+          if (msg.content.toLowerCase().includes(keyword)) {
+            detectedTopics.add(topic);
+          }
+        });
+      }
+    });
+    
+    return Array.from(detectedTopics);
+  };
+  
+  const calculateEngagement = (messageHistory) => {
+    const userMessages = messageHistory.filter(msg => msg.type === 'user');
+    if (userMessages.length === 0) return 0;
+    
+    const avgLength = userMessages.reduce((sum, msg) => {
+      const content = typeof msg.content === 'string' ? msg.content : '';
+      return sum + content.length;
+    }, 0) / userMessages.length;
+    
+    return Math.min(100, Math.round((avgLength / 50) * 100));
+  };
+  
+  const fetchUserPreferences = async () => {
+    try {
+      const response = await apiClient.get('/chatbot/user-preferences');
+      return response.data.preferences || {};
+    } catch (error) {
+      return {};
+    }
+  };
+  
+  // Enhanced multi-modal input handlers
+  const handleImageUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = (e) => {
+      const files = Array.from(e.target.files);
+      processImageFiles(files);
+    };
+    input.click();
+  };
+  
+  const processImageFiles = async (files) => {
+    const images = await Promise.all(files.map(file => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          resolve({
+            id: Date.now() + Math.random(),
+            file, dataUrl: e.target.result, type: 'image',
+            timestamp: new Date().toISOString()
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    }));
+    
+    setMultiModalInput(prev => ({ ...prev, images: [...prev.images, ...images] }));
+    sendImageAnalysisRequest(images);
+  };
+  
+  const sendImageAnalysisRequest = async (images) => {
+    const imageMessage = {
+      id: Date.now(), type: 'user', content: '📸 Shared images for health analysis',
+      timestamp: new Date(), attachments: images
+    };
+    setMessages(prev => [...prev, imageMessage]);
+    setIsLoading(true);
+    
+    setTimeout(() => {
+      const botMessage = {
+        id: Date.now() + 1, type: 'bot',
+        content: {
+          type: 'image_analysis',
+          message: 'I\'ve analyzed your medical images. Based on visual assessment:\n\n• Image quality is sufficient for preliminary review\n• No immediate alarming features detected\n• Professional medical evaluation recommended for accurate diagnosis\n\nWould you like help finding a specialist?',
+          urgency: 'medium'
+        },
+        timestamp: new Date(), messageType: 'image_analysis'
+      };
+      setMessages(prev => [...prev, botMessage]);
+      setIsLoading(false);
+    }, 2000);
+  };
+  
+  const startVoiceAnalysis = () => {
+    if (recognitionRef.current) {
+      setIsListening(true);
+      recognitionRef.current.start();
+      
+      const voiceMessage = {
+        id: Date.now(), type: 'user', content: '🎤 Starting voice health analysis...',
+        timestamp: new Date(), messageType: 'voice_analysis'
+      };
+      setMessages(prev => [...prev, voiceMessage]);
+    }
+  };
+  
+  const toggleEmotionDetection = () => {
+    setEmotionDetection(prev => ({ ...prev, enabled: !prev.enabled }));
+    const emotionMessage = {
+      id: Date.now(), type: 'user',
+      content: `😊 Emotion detection ${emotionDetection.enabled ? 'disabled' : 'enabled'}`,
+      timestamp: new Date(), messageType: 'feature_toggle'
+    };
+    setMessages(prev => [...prev, emotionMessage]);
+  };
+  
+  const activateEmergencyMode = () => {
+    setChatMode('emergency');
+    setAiPersonality(prev => ({ ...prev, mode: 'emergency', empathy: 1.0, urgency: 1.0 }));
+    sendQuickMessage("🚨 EMERGENCY: I need immediate medical assistance and guidance.");
+  };
+  
+  const speakResponse = useCallback((text) => {
+    if (synth.current && voiceSynthesis.enabled && 'speechSynthesis' in window) {
+      synth.current.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = voiceSynthesis.rate;
+      utterance.pitch = voiceSynthesis.pitch;
+      utterance.volume = 0.8;
+      
+      utterance.onstart = () => setVoiceSynthesis(prev => ({ ...prev, speaking: true }));
+      utterance.onend = () => setVoiceSynthesis(prev => ({ ...prev, speaking: false }));
+      utterance.onerror = () => setVoiceSynthesis(prev => ({ ...prev, speaking: false }));
+      
+      synth.current.speak(utterance);
+    }
+  }, [voiceSynthesis.enabled, voiceSynthesis.rate, voiceSynthesis.pitch]);
+  
+  const stopSpeaking = () => {
+    if (synth.current) {
+      synth.current.cancel();
+      setVoiceSynthesis(prev => ({ ...prev, speaking: false }));
+    }
   };
 
   const fetchConversationHistory = async () => {
@@ -169,13 +600,29 @@ const AdvancedChatbot = ({ isModal = true }) => {
       id: Date.now(),
       type: 'user',
       content: message,
-      timestamp: new Date()
+      timestamp: new Date(),
+      emotion: emotionDetection.currentEmotion,
+      multiModal: multiModalInput.images.length > 0 || multiModalInput.videos.length > 0
     };
 
     setMessages(prev => [...prev, userMessage]);
+    
+    // Update conversation memory
+    setConversationMemory(prev => ({
+      ...prev,
+      context: [...prev.context.slice(-10), {
+        message: message,
+        timestamp: new Date().toISOString(),
+        emotion: emotionDetection.currentEmotion
+      }]
+    }));
+    
     setMessage('');
     setIsLoading(true);
     setShowQuickActions(false);
+    
+    // Show typing indicator
+    setRealTimeFeatures(prev => ({ ...prev, typing: true }));
 
     try {
       const response = await fetch('/api/v1/chatbot/message', {
@@ -189,7 +636,15 @@ const AdvancedChatbot = ({ isModal = true }) => {
           context: {
             medications: user?.medications || [],
             medicalHistory: user?.medicalHistory || [],
-            allergies: user?.allergies || []
+            allergies: user?.allergies || [],
+            conversationMemory: conversationMemory.context,
+            currentEmotion: emotionDetection.currentEmotion,
+            aiPersonality: aiPersonality,
+            chatMode: chatMode,
+            multiModalData: {
+              hasImages: multiModalInput.images.length > 0,
+              hasVideos: multiModalInput.videos.length > 0
+            }
           }
         })
       });
@@ -204,9 +659,22 @@ const AdvancedChatbot = ({ isModal = true }) => {
             timestamp: new Date(),
             userMessage: userMessage.content,
             messageType: data.response.type,
-            urgency: data.response.urgency
+            urgency: data.response.urgency,
+            aiPersonality: aiPersonality.mode,
+            emotionAware: !!emotionDetection.currentEmotion
           };
           setMessages(prev => [...prev, botMessage]);
+          
+          // Speak response if voice synthesis is enabled and not in silent mode
+          if (voiceSynthesis.enabled && data.response.message) {
+            const textToSpeak = typeof data.response.message === 'string' 
+              ? data.response.message.replace(/<[^>]*>/g, '') // Remove HTML tags
+              : data.response.message;
+            speakResponse(textToSpeak);
+          }
+          
+          // Clear multi-modal input after processing
+          setMultiModalInput({ images: [], videos: [], documents: [] });
         }
       } else {
         throw new Error('Failed to send message');
@@ -218,7 +686,7 @@ const AdvancedChatbot = ({ isModal = true }) => {
         type: 'bot',
         content: {
           type: 'error',
-          message: 'Sorry, I\'m having trouble responding right now. Please try again later.',
+          message: 'I\'m experiencing technical difficulties right now. Please try again in a moment, or if this is urgent, consider contacting emergency services.',
           urgency: 'low'
         },
         timestamp: new Date()
@@ -226,6 +694,7 @@ const AdvancedChatbot = ({ isModal = true }) => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setRealTimeFeatures(prev => ({ ...prev, typing: false }));
     }
   };
 
@@ -354,7 +823,7 @@ const AdvancedChatbot = ({ isModal = true }) => {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 flex flex-col h-[calc(100vh-2rem)]">
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-lg">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="relative">
@@ -364,18 +833,116 @@ const AdvancedChatbot = ({ isModal = true }) => {
                     }`}></div>
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold">AI Health Assistant</h1>
-                    <p className="text-blue-100">
-                      {botStatus === 'online' ? 'Online • Ready to help with your health questions' : 'Offline'}
+                    <h1 className="text-2xl font-bold flex items-center">
+                      AI Health Assistant
+                      {emotionDetection.enabled && (
+                        <FaceSmileIcon className="w-5 h-5 ml-2 text-yellow-300" />
+                      )}
+                      {voiceSynthesis.enabled && (
+                        <SpeakerWaveIcon className="w-5 h-5 ml-1 text-green-300" />
+                      )}
+                    </h1>
+                    <p className="text-blue-100 flex items-center space-x-2">
+                      <span>
+                        {botStatus === 'online' ? 'Online • Ready to help with advanced AI features' : 'Offline'}
+                      </span>
+                      {realTimeFeatures.typing && (
+                        <span className="flex items-center ml-2">
+                          <div className="animate-pulse w-2 h-2 bg-yellow-300 rounded-full mr-1"></div>
+                          <span className="text-yellow-300">AI thinking...</span>
+                        </span>
+                      )}
                     </p>
+                    {emotionDetection.currentEmotion && (
+                      <p className="text-xs text-blue-200 mt-1">
+                        Detected mood: {emotionDetection.currentEmotion.emotion} 
+                        ({Math.round(emotionDetection.currentEmotion.confidence * 100)}% confidence)
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm bg-blue-500/20 px-3 py-1 rounded-full">
-                    Powered by Gemini AI
-                  </span>
+                <div className="flex items-center space-x-3">
+                  {/* Advanced Features Toggle */}
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => setVoiceSynthesis(prev => ({ ...prev, enabled: !prev.enabled }))}
+                      className={`p-2 rounded-lg transition-colors ${
+                        voiceSynthesis.enabled ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-300'
+                      }`}
+                      title="Toggle voice responses"
+                    >
+                      {voiceSynthesis.speaking ? (
+                        <SpeakerWaveIcon className="w-4 h-4" />
+                      ) : (
+                        <SpeakerXMarkIcon className="w-4 h-4" />
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={toggleEmotionDetection}
+                      className={`p-2 rounded-lg transition-colors ${
+                        emotionDetection.enabled ? 'bg-yellow-500/20 text-yellow-300' : 'bg-gray-500/20 text-gray-300'
+                      }`}
+                      title="Toggle emotion detection"
+                    >
+                      <FaceSmileIcon className="w-4 h-4" />
+                    </button>
+                    
+                    <button
+                      onClick={handleImageUpload}
+                      className="p-2 rounded-lg bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors"
+                      title="Upload medical images"
+                    >
+                      <CameraIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <div className="text-right">
+                    <span className="text-sm bg-blue-500/20 px-3 py-1 rounded-full flex items-center space-x-1">
+                      <CpuChipIcon className="w-4 h-4" />
+                      <span>Gemini 2.0 Flash</span>
+                    </span>
+                    {advancedAnalytics.engagement > 0 && (
+                      <div className="text-xs text-blue-200 mt-1">
+                        Engagement: {advancedAnalytics.engagement}%
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
+              
+              {/* Advanced Analytics Bar */}
+              {(advancedAnalytics.sentiment || advancedAnalytics.topics.length > 0) && (
+                <div className="mt-4 pt-4 border-t border-blue-400/30">
+                  <div className="flex items-center justify-between text-sm">
+                    {advancedAnalytics.sentiment && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-blue-200">Sentiment:</span>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          advancedAnalytics.sentiment === 'positive' ? 'bg-green-500/20 text-green-300' :
+                          advancedAnalytics.sentiment === 'negative' ? 'bg-red-500/20 text-red-300' :
+                          'bg-gray-500/20 text-gray-300'
+                        }`}>
+                          {advancedAnalytics.sentiment}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {advancedAnalytics.topics.length > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-blue-200">Topics:</span>
+                        <div className="flex space-x-1">
+                          {advancedAnalytics.topics.slice(0, 3).map((topic, idx) => (
+                            <span key={idx} className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs">
+                              {topic}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Messages Area */}

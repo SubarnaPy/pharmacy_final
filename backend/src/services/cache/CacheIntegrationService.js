@@ -1,4 +1,4 @@
-// import redisCacheService from './RedisCacheService.js';
+// Cache integration service without Redis dependency
 import notificationQueueOptimizer from './NotificationQueueOptimizer.js';
 import databaseQueryOptimizer from './DatabaseQueryOptimizer.js';
 import connectionPoolManager from './ConnectionPoolManager.js';
@@ -8,7 +8,7 @@ class CacheIntegrationService {
   constructor() {
     this.isInitialized = false;
     this.services = {
-      // redis: redisCacheService,
+      // Redis disabled - using in-memory alternatives
       queue: notificationQueueOptimizer,
       database: databaseQueryOptimizer,
       connections: connectionPoolManager
@@ -19,17 +19,23 @@ class CacheIntegrationService {
       totalRequests: 0,
       errorRate: 0
     };
+    
+    // In-memory cache for notification data
+    this.notificationCache = new Map();
+    this.maxCacheSize = 10000;
+    
+    // Periodic cleanup
+    setInterval(() => {
+      this.cleanupCache();
+    }, 300000); // Every 5 minutes
   }
 
   async initialize() {
     try {
-      logger.info('Initializing cache integration service...');
+      logger.info('Initializing cache integration service (in-memory mode)...');
 
-      // Initialize Redis cache service
-      // const redisInitialized = await this.services.redis.initialize();
-      // if (!redisInitialized) {
-      //   logger.warn('Redis cache service failed to initialize, continuing without Redis');
-      // }
+      // Redis cache service is disabled
+      logger.info('Redis cache service disabled - using in-memory caching');
 
       // Initialize notification queue optimizer
       const queueInitialized = await this.services.queue.initialize();
@@ -55,11 +61,22 @@ class CacheIntegrationService {
     }
   }
 
-  // Unified caching interface for notifications
+  // Unified caching interface for notifications (in-memory)
   async cacheNotificationData(key, data, ttl = 3600) {
     try {
-      // Redis disabled
-      return false;
+      // Store in in-memory cache with expiration
+      const expirationTime = Date.now() + (ttl * 1000);
+      this.notificationCache.set(key, {
+        data: data,
+        expires: expirationTime
+      });
+      
+      // Limit cache size
+      if (this.notificationCache.size > this.maxCacheSize) {
+        this.cleanupCache();
+      }
+      
+      return true;
     } catch (error) {
       logger.error(`Error caching notification data ${key}:`, error);
       return false;
@@ -68,8 +85,19 @@ class CacheIntegrationService {
 
   async getCachedNotificationData(key) {
     try {
-      // Redis disabled
-      return null;
+      const cached = this.notificationCache.get(key);
+      
+      if (!cached) {
+        return null;
+      }
+      
+      // Check if expired
+      if (Date.now() > cached.expires) {
+        this.notificationCache.delete(key);
+        return null;
+      }
+      
+      return cached.data;
     } catch (error) {
       logger.error(`Error getting cached notification data ${key}:`, error);
       return null;
@@ -209,7 +237,7 @@ class CacheIntegrationService {
     }
   }
 
-  // Performance monitoring
+      // Performance monitoring
   startPerformanceMonitoring() {
     setInterval(async () => {
       await this.collectPerformanceMetrics();
@@ -221,6 +249,11 @@ class CacheIntegrationService {
       const metrics = {
         timestamp: new Date(),
         redis: { status: 'disabled' }, // Redis disabled
+        cache: {
+          size: this.notificationCache.size,
+          maxSize: this.maxCacheSize,
+          utilization: (this.notificationCache.size / this.maxCacheSize) * 100
+        },
         queue: await this.services.queue.getQueueStats(),
         database: await this.services.database.getPerformanceMetrics(),
         connections: await this.services.connections.getAllPoolStats()
@@ -278,6 +311,39 @@ class CacheIntegrationService {
     }
 
     return totalRequests > 0 ? (totalErrors / totalRequests) * 100 : 0;
+  }
+
+  // Cache cleanup method
+  cleanupCache() {
+    try {
+      const now = Date.now();
+      let removedCount = 0;
+      
+      // Remove expired entries
+      for (const [key, value] of this.notificationCache.entries()) {
+        if (now > value.expires) {
+          this.notificationCache.delete(key);
+          removedCount++;
+        }
+      }
+      
+      // If still too large, remove oldest entries
+      if (this.notificationCache.size > this.maxCacheSize) {
+        const entries = Array.from(this.notificationCache.entries());
+        const toRemove = this.notificationCache.size - this.maxCacheSize + 100; // Remove extra to avoid frequent cleanup
+        
+        for (let i = 0; i < toRemove && i < entries.length; i++) {
+          this.notificationCache.delete(entries[i][0]);
+          removedCount++;
+        }
+      }
+      
+      if (removedCount > 0) {
+        logger.debug(`Cleaned up ${removedCount} cache entries`);
+      }
+    } catch (error) {
+      logger.error('Error during cache cleanup:', error);
+    }
   }
 
   // Health check

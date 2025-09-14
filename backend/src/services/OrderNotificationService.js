@@ -12,9 +12,9 @@ import emailService from './emailService.js';
 import smsService from './smsService.js';
 
 class OrderNotificationService extends EventEmitter {
-  constructor() {
+  constructor(io) {
     super();
-    this.notificationService = new RealTimeNotificationService();
+    this.notificationService = new RealTimeNotificationService(io);
     this.setupEventListeners();
     this.startAutomatedNotifications();
   }

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5000/api/v1',
+  baseURL: 'http://localhost:5000/api/v1', // Temporarily use direct URL for debugging
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,6 +13,8 @@ apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   console.log('🔍 ApiClient interceptor - Token available:', !!token);
   console.log('🔍 ApiClient interceptor - Request URL:', config.url);
+  console.log('🔍 ApiClient interceptor - Base URL:', config.baseURL);
+  console.log('🔍 ApiClient interceptor - Full URL:', `${config.baseURL}${config.url}`);
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

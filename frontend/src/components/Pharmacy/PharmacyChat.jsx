@@ -73,7 +73,7 @@ function PharmacyChat() {
     newSocket.on('new_message', (messageData) => {
       if (selectedConversation && messageData.roomId === selectedConversation._id) {
         setMessages(prev => [...prev, {
-          _id: messageData.id,
+          _id: messageData._id || messageData.id,
           content: messageData.content,
           sender: messageData.sender.role === 'pharmacy' ? 'pharmacy' : 'patient',
           senderId: messageData.sender,
@@ -85,9 +85,9 @@ function PharmacyChat() {
       }
 
       // Update conversation list
-      setActiveConversations(prev => 
-        prev.map(conv => 
-          conv._id === messageData.roomId 
+      setActiveConversations(prev =>
+        prev.map(conv =>
+          conv._id === messageData.roomId
             ? {
                 ...conv,
                 lastMessage: {
@@ -139,58 +139,92 @@ function PharmacyChat() {
 
   const fetchActiveConversations = async () => {
     setLoading(true);
+    console.log('🔍 PharmacyChat - Fetching order chats...');
     try {
-      const response = await apiClient.get('/chat/conversations');
+      const response = await apiClient.get('/order-chat/user/conversations');
+      console.log('📋 PharmacyChat - Order chats API Response:', response.data);
 
-      console.log('Response status:', response.status);
-      console.log('Response data:', response.data);
-      
       if (response.data.success) {
-        setActiveConversations(response.data.data || []);
+        const orderChats = response.data.data?.conversations || [];
+        console.log('✅ PharmacyChat - Setting order chats:', orderChats);
+
+        // Transform order chats to match the expected conversation format
+        const transformedConversations = orderChats.map(orderChat => ({
+          _id: orderChat._id,
+          type: 'order',
+          orderId: orderChat.orderId,
+          patientId: orderChat.patientId,
+          patient: {
+            _id: orderChat.otherParticipant?.userId || 'unknown',
+            profile: {
+              firstName: orderChat.otherParticipant?.name?.split(' ')[0] || 'Patient',
+              lastName: orderChat.otherParticipant?.name?.split(' ').slice(1).join(' ') || ''
+            },
+            contact: {
+              phone: orderChat.otherParticipant?.phone || 'N/A'
+            }
+          },
+          status: orderChat.isActive ? 'active' : 'inactive',
+          lastMessage: orderChat.lastMessage,
+          unreadCount: orderChat.unreadCount || 0, // Will be updated by notifications hook
+          roomId: orderChat.roomId,
+          createdAt: orderChat.createdAt,
+          updatedAt: orderChat.updatedAt,
+          orderInfo: orderChat.orderInfo,
+          prescriptionRequest: {
+            requestNumber: orderChat.orderInfo?.orderNumber || 'N/A'
+          }
+        }));
+
+        setActiveConversations(transformedConversations);
       } else {
-        console.error('Error response:', response.data);
-        throw new Error('Failed to fetch conversations');
+        console.error('❌ PharmacyChat - API returned success=false:', response.data);
+        throw new Error('Failed to fetch order chats');
       }
     } catch (error) {
-      console.error('Error fetching conversations:', error);
-      toast.error('Failed to load conversations');
+      console.error('❌ PharmacyChat - Error fetching order chats:', error);
+      toast.error('Failed to load order chats');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchMessages = async (conversationId) => {
+  const fetchMessages = async (orderId) => {
     setLoading(true);
-    console.log('🔍 PharmacyChat - Fetching messages for conversation:', conversationId);
+    console.log('🔍 PharmacyChat - Fetching messages for order:', orderId);
     try {
-      const response = await apiClient.get(`/chat/conversations/${conversationId}/messages`);
-      console.log('📨 PharmacyChat - API Response:', response.data);
+      const response = await apiClient.get(`/order-chat/${orderId}/messages`);
+      console.log('📨 PharmacyChat - Order chat messages API Response:', response.data);
 
       if (response.data.success) {
-        const rawMessages = response.data.data;
+        const rawMessages = response.data.data?.messages || [];
         console.log('📋 PharmacyChat - Raw messages from API:', rawMessages);
-        
+
         const formattedMessages = rawMessages.map(msg => {
           console.log('📝 PharmacyChat - Processing message:', {
             id: msg._id,
             content: msg.content,
             senderId: msg.senderId,
-            senderRole: msg.senderId?.role,
-            createdAt: msg.createdAt
+            senderRole: msg.senderRole,
+            timestamp: msg.timestamp
           });
-          
+
           return {
             _id: msg._id,
             content: msg.content,
-            sender: msg.senderId.role === 'pharmacy' ? 'pharmacy' : 'patient',
-            senderId: msg.senderId,
-            timestamp: msg.createdAt,
+            sender: msg.senderRole === 'pharmacy' ? 'pharmacy' : 'patient',
+            senderId: {
+              _id: msg.senderId,
+              role: msg.senderRole,
+              name: msg.senderRole === 'pharmacy' ? 'Pharmacy' : 'Patient'
+            },
+            timestamp: msg.timestamp,
             type: msg.type,
             metadata: msg.metadata,
-            status: msg.readBy.length > 1 ? 'read' : 'delivered'
+            status: msg.readBy && msg.readBy.some(read => read.userId === getCurrentUserId()) ? 'read' : 'delivered'
           };
         });
-        
+
         console.log('✅ PharmacyChat - Formatted messages:', formattedMessages);
         setMessages(formattedMessages);
       } else {
@@ -207,21 +241,21 @@ function PharmacyChat() {
 
   const selectConversation = (conversation) => {
     setSelectedConversation(conversation);
-    fetchMessages(conversation._id);
-    
+    fetchMessages(conversation.orderId);
+
     // Join room for real-time updates
     if (socket) {
-      socket.emit('join_room', { roomId: conversation._id });
+      socket.emit('join_room', { roomId: conversation.roomId });
     }
-    
+
     // Mark as read using enhanced notification system
     if (getConversationUnreadCount(conversation._id) > 0) {
-      markConversationAsRead(conversation._id);
-      
+      markAsRead(conversation.orderId);
+
       // Update local conversation state to remove unread count
-      setActiveConversations(prev => 
-        prev.map(conv => 
-          conv._id === conversation._id 
+      setActiveConversations(prev =>
+        prev.map(conv =>
+          conv._id === conversation._id
             ? { ...conv, unreadCount: 0 }
             : conv
         )
@@ -229,14 +263,14 @@ function PharmacyChat() {
     }
   };
 
-  const markAsRead = async (conversationId) => {
+  const markAsRead = async (orderId) => {
     try {
-      await apiClient.post(`/chat/conversations/${conversationId}/read`);
-      
+      await apiClient.post(`/order-chat/${orderId}/read`);
+
       // Update local state
-      setActiveConversations(prev => 
-        prev.map(conv => 
-          conv._id === conversationId 
+      setActiveConversations(prev =>
+        prev.map(conv =>
+          conv.orderId === orderId
             ? { ...conv, unreadCount: 0 }
             : conv
         )
@@ -250,17 +284,34 @@ function PharmacyChat() {
     if (!newMessage.trim() || !selectedConversation) return;
 
     const messageData = {
-      conversationId: selectedConversation._id,
       content: newMessage.trim(),
       type: 'text'
     };
 
     try {
-      const response = await apiClient.post('/chat/messages', messageData);
+      const response = await apiClient.post(`/order-chat/${selectedConversation.orderId}/messages`, messageData);
 
       if (response.data.success) {
         setNewMessage('');
-        
+
+        // Optimistically add the message to the UI
+        const saved = response.data.data?.message || {};
+        const newMessageObj = {
+          _id: saved._id || `temp_${Date.now()}`,
+          content: saved.content || messageData.content,
+          sender: 'pharmacy',
+          senderId: {
+            _id: saved.senderId || 'current_user',
+            role: 'pharmacy',
+            name: 'Pharmacy'
+          },
+          timestamp: saved.timestamp || new Date().toISOString(),
+          type: 'text',
+          status: 'delivered'
+        };
+
+        setMessages(prev => [...prev, newMessageObj]);
+
         // Update conversation last message
         setActiveConversations(prev =>
           prev.map(conv =>
@@ -352,38 +403,47 @@ function PharmacyChat() {
     return date.toLocaleDateString();
   };
 
+  const getCurrentUserId = () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.userId || payload.id;
+      }
+    } catch (error) {
+      console.error('Error getting current user ID:', error);
+    }
+    return null;
+  };
+
   const formatMessageTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
   const ConversationItem = ({ conversation }) => {
     const conversationUnreadCount = getConversationUnreadCount(conversation._id);
     const hasUnreadMessages = conversationUnreadCount > 0 || hasNewMessages(conversation._id);
-    {conversation.metadata?.orderNumber && (
-    <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-      Order: {conversation.metadata.orderNumber}
-    </p>
-  )}
+
     return (
       <div
         onClick={() => selectConversation(conversation)}
         className={`
           relative p-4 cursor-pointer transition-all duration-300 border-b border-gray-200 dark:border-gray-700
-          ${selectedConversation?._id === conversation._id 
-            ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' 
+          ${selectedConversation?._id === conversation._id
+            ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500'
             : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
           }
           ${hasUnreadMessages ? 'bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-900/10' : ''}
         `}
       >
-        {conversation.metadata?.orderNumber && (
-    <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-      Order: {conversation.metadata.orderNumber}
-    </p>
-  )}
+        {conversation.orderInfo?.orderNumber && (
+          <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
+            Order: {conversation.orderInfo.orderNumber}
+          </p>
+        )}
         {/* Red dot indicator for new messages */}
         {hasUnreadMessages && (
           <div className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full shadow-lg animate-pulse">

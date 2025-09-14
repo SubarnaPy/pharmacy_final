@@ -1,6 +1,3 @@
-import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
 import NotificationService from './realtime/NotificationService.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 import jwt from 'jsonwebtoken';
@@ -10,17 +7,8 @@ import jwt from 'jsonwebtoken';
  * Handles live notifications for pharmacy alerts and updates
  */
 class RealTimeNotificationService {
-  constructor(app) {
-    this.app = app;
-    this.server = createServer(app);
-    this.io = new Server(this.server, {
-      cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        methods: ["GET", "POST"],
-        credentials: true
-      }
-    });
-    
+  constructor(io) {
+    this.io = io;
     this.notificationService = new NotificationService();
     this.connectedClients = new Map(); // userId/pharmacyId -> socket
     this.pharmacySubscriptions = new Map(); // pharmacyId -> Set of socketIds
@@ -512,15 +500,6 @@ class RealTimeNotificationService {
       patients: Array.from(this.connectedClients.values()).filter(socket => socket.userRole === 'patient').length,
       admins: Array.from(this.connectedClients.values()).filter(socket => socket.userRole === 'admin').length
     };
-  }
-
-  /**
-   * Start the server
-   */
-  listen(port) {
-    this.server.listen(port, () => {
-      console.log(`Real-time notification service running on port ${port}`);
-    });
   }
 }
 

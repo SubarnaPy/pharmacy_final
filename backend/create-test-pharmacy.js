@@ -9,7 +9,7 @@ dotenv.config();
 async function createTestPharmacy() {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/prescription-app');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/p-setup-3');
     console.log('Connected to MongoDB');
 
     // Find the specific pharmacy user from the logs

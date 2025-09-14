@@ -472,6 +472,59 @@ const pharmacySchema = new Schema({
     hasAPI: { type: Boolean, default: false },
     apiKey: String,
     webhookUrl: String
+  },
+
+  // Payment Integration (Stripe)
+  paymentConfig: {
+    stripeAccountId: {
+      type: String,
+      trim: true,
+      sparse: true
+    },
+    stripePublishableKey: {
+      type: String,
+      trim: true
+    },
+    stripeSecretKey: {
+      type: String,
+      trim: true
+    },
+    paymentMethods: {
+      stripe: { type: Boolean, default: false },
+      razorpay: { type: Boolean, default: false },
+      cashOnDelivery: { type: Boolean, default: true },
+      cardOnDelivery: { type: Boolean, default: false },
+      upi: { type: Boolean, default: false }
+    },
+    minimumOrderAmount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    processingFeePercentage: {
+      type: Number,
+      default: 2.5,
+      min: 0,
+      max: 10
+    },
+    automaticPayouts: {
+      type: Boolean,
+      default: false
+    },
+    payoutSchedule: {
+      type: String,
+      enum: ['daily', 'weekly', 'monthly'],
+      default: 'weekly'
+    }
+  },
+
+  // Medicine Search and AI Features
+  aiFeatures: {
+    imageRecognition: { type: Boolean, default: true },
+    smartSearch: { type: Boolean, default: true },
+    inventorySync: { type: Boolean, default: true },
+    priceComparison: { type: Boolean, default: true },
+    stockAlerts: { type: Boolean, default: true }
   }
 
 }, {
@@ -490,6 +543,8 @@ pharmacySchema.index({ 'contact.email': 1 }); // Email index for faster queries
 pharmacySchema.index({ name: 'text', description: 'text', searchTags: 'text' }); // Text search index
 pharmacySchema.index({ createdAt: -1 }); // Index for recent registrations
 pharmacySchema.index({ 'rating.averageRating': -1 }); // Index for rating-based sorting
+pharmacySchema.index({ 'paymentConfig.stripeAccountId': 1 }); // Index for Stripe account lookup
+pharmacySchema.index({ 'aiFeatures.imageRecognition': 1, 'aiFeatures.smartSearch': 1 }); // AI features index
 
 // Virtual fields
 pharmacySchema.virtual('isOpen').get(function() {
@@ -505,6 +560,17 @@ pharmacySchema.virtual('isOpen').get(function() {
 
 pharmacySchema.virtual('hasActiveDelivery').get(function() {
   return this.delivery.isAvailable && this.delivery.zones && this.delivery.zones.length > 0;
+});
+
+pharmacySchema.virtual('supportsAdvancedSearch').get(function() {
+  return this.aiFeatures && 
+         (this.aiFeatures.imageRecognition || this.aiFeatures.smartSearch);
+});
+
+pharmacySchema.virtual('hasStripeIntegration').get(function() {
+  return this.paymentConfig && 
+         this.paymentConfig.stripeAccountId && 
+         this.paymentConfig.paymentMethods.stripe;
 });
 
 pharmacySchema.virtual('primaryLicense').get(function() {
@@ -589,6 +655,40 @@ pharmacySchema.methods.canAcceptPrescription = function() {
          this.primaryLicense.verificationStatus === 'verified';
 };
 
+pharmacySchema.methods.canProcessPayments = function() {
+  return this.paymentConfig && 
+         (this.paymentConfig.paymentMethods.stripe || 
+          this.paymentConfig.paymentMethods.razorpay || 
+          this.paymentConfig.paymentMethods.cashOnDelivery);
+};
+
+pharmacySchema.methods.getActivePaymentMethods = function() {
+  if (!this.paymentConfig) return ['cashOnDelivery'];
+  
+  const activeMethods = [];
+  Object.keys(this.paymentConfig.paymentMethods).forEach(method => {
+    if (this.paymentConfig.paymentMethods[method]) {
+      activeMethods.push(method);
+    }
+  });
+  
+  return activeMethods.length > 0 ? activeMethods : ['cashOnDelivery'];
+};
+
+pharmacySchema.methods.calculateProcessingFee = function(amount) {
+  if (!this.paymentConfig || !this.paymentConfig.processingFeePercentage) {
+    return 0;
+  }
+  return Math.round((amount * this.paymentConfig.processingFeePercentage) / 100);
+};
+
+pharmacySchema.methods.meetsMinimumOrder = function(orderAmount) {
+  if (!this.paymentConfig || !this.paymentConfig.minimumOrderAmount) {
+    return true;
+  }
+  return orderAmount >= this.paymentConfig.minimumOrderAmount;
+};
+
 // Static methods
 pharmacySchema.statics.findNearby = function(coordinates, radiusKm = 10, filters = {}) {
   const query = {
@@ -632,6 +732,35 @@ pharmacySchema.statics.getPharmacyStats = function() {
   ]);
 };
 
+pharmacySchema.statics.findByPaymentMethod = function(paymentMethod, filters = {}) {
+  const query = {
+    [`paymentConfig.paymentMethods.${paymentMethod}`]: true,
+    isActive: true,
+    isVerified: true,
+    registrationStatus: 'approved',
+    ...filters
+  };
+  
+  return this.find(query);
+};
+
+pharmacySchema.statics.findWithAIFeatures = function(features = [], filters = {}) {
+  const aiQuery = {};
+  features.forEach(feature => {
+    aiQuery[`aiFeatures.${feature}`] = true;
+  });
+  
+  const query = {
+    ...aiQuery,
+    isActive: true,
+    isVerified: true,
+    registrationStatus: 'approved',
+    ...filters
+  };
+  
+  return this.find(query);
+};
+
 // Middleware hooks
 pharmacySchema.pre('save', function(next) {
   // Update last active timestamp
@@ -643,6 +772,18 @@ pharmacySchema.pre('save', function(next) {
     if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
       return next(new Error('Invalid coordinates provided'));
     }
+  }
+  
+  // Validate Stripe configuration if enabled
+  if (this.paymentConfig && this.paymentConfig.paymentMethods.stripe) {
+    if (!this.paymentConfig.stripeAccountId) {
+      return next(new Error('Stripe account ID is required when Stripe payments are enabled'));
+    }
+  }
+  
+  // Set default payment methods if none specified
+  if (this.paymentConfig && !Object.values(this.paymentConfig.paymentMethods).some(method => method)) {
+    this.paymentConfig.paymentMethods.cashOnDelivery = true;
   }
   
   // Ensure operating hours are complete
@@ -666,11 +807,21 @@ pharmacySchema.pre('findOneAndUpdate', function(next) {
 // Post middleware for logging
 pharmacySchema.post('save', function(doc) {
   console.log(`Pharmacy ${doc.name} has been saved with status: ${doc.registrationStatus}`);
+  
+  // Log payment configuration updates
+  if (doc.paymentConfig && doc.paymentConfig.stripeAccountId) {
+    console.log(`Pharmacy ${doc.name} has Stripe integration configured`);
+  }
 });
 
 pharmacySchema.post('findOneAndUpdate', function(doc) {
   if (doc) {
     console.log(`Pharmacy ${doc.name} has been updated`);
+    
+    // Log AI features updates
+    if (doc.aiFeatures) {
+      console.log(`Pharmacy ${doc.name} AI features updated:`, Object.keys(doc.aiFeatures).filter(key => doc.aiFeatures[key]));
+    }
   }
 });
 

@@ -4,12 +4,11 @@ import Pharmacy from '../models/Pharmacy.js';
 import User from '../models/User.js';
 import UserNotificationService from '../services/UserNotificationService.js';
 import NotificationService from '../services/realtime/NotificationService.js';
-import ConversationController from './ConversationController.js';
+import OrderChat from '../models/OrderChat.js';
 
 class OrderController {
   constructor() {
     this.notificationService = new NotificationService();
-    this.conversationController = new ConversationController();
     console.log('✅ Order Controller initialized');
   }
   /**
@@ -207,13 +206,20 @@ class OrderController {
           console.error('⚠️ Failed to send order notifications:', notificationError.message);
         }
 
-        // Auto-create conversation for the new order
+        // Auto-create order chat room for the new order
         try {
-    await this.conversationController.autoCreateOrderConversation(order._id, pharmacy.owner, userId);
-    console.log('✅ Order conversation created');
-  } catch (convError) {
-    console.error('⚠️ Failed to create order conversation:', convError.message);
-  }
+          await OrderChat.createOrderChat({
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            patientId: userId,
+            pharmacyId: pharmacy._id,
+            pharmacyUserId: pharmacy.owner,
+            status: order.status
+          });
+          console.log('✅ Order chat room created');
+        } catch (chatError) {
+          console.error('⚠️ Failed to create order chat room:', chatError.message);
+        }
 
         // Populate the order for response
         const populatedOrder = await Order.findById(order._id)
@@ -351,14 +357,15 @@ class OrderController {
 
       await order.updateStatus(status, notes, userId);
 
-      // Auto-create order conversation when order is confirmed
-      if (status === 'confirmed' && userRole === 'pharmacy') {
-        try {
-          await this.conversationController.autoCreateOrderConversation(order._id, userId);
-          console.log('✅ Order conversation created for:', order.orderNumber);
-        } catch (convError) {
-          console.error('⚠️ Failed to create order conversation:', convError.message);
+      // Update order chat room status when order status changes
+      try {
+        const orderChat = await OrderChat.findOne({ orderId: order._id });
+        if (orderChat) {
+          await OrderChat.updateStatus(order._id, status);
+          console.log('✅ Order chat room status updated to:', status);
         }
+      } catch (chatError) {
+        console.error('⚠️ Failed to update order chat room status:', chatError.message);
       }
 
       console.log('✅ Order status updated:', order.orderNumber, 'to:', status);

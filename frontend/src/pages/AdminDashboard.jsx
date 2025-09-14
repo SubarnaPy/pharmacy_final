@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import AdminNotificationDashboard from '../components/admin/AdminNotificationDashboard';
+import EnhancedDashboard from '../components/dashboard/EnhancedDashboard';
 
 function AdminDashboard() {
   const { user, isAuthenticated } = useSelector(state => state.auth);
@@ -289,6 +290,14 @@ function AdminDashboard() {
             onClick={() => setActiveSection('system-health')}
             gradient="bg-gradient-to-r from-teal-500 to-cyan-500"
           />
+          <QuickActionCard
+            icon={ChartBarIcon}
+            title="AI Admin Tools"
+            description="Advanced AI-powered admin features and analytics"
+            onClick={() => setActiveSection('ai-features')}
+            gradient="bg-gradient-to-r from-indigo-500 to-purple-600"
+            badge="AI"
+          />
         </div>
       </div>
 
@@ -332,6 +341,8 @@ function AdminDashboard() {
         return renderDashboardOverview();
       case 'notifications':
         return <AdminNotificationDashboard />;
+      case 'ai-features':
+        return <EnhancedDashboard />;
       default:
         return (
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/30 shadow-lg">

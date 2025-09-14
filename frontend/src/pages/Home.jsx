@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { 
   ShoppingCartIcon,
@@ -23,6 +23,7 @@ import { DarkModeContext } from '../app/DarkModeContext';
 function Home() {
   const { user, isAuthenticated } = useSelector(state => state.auth);
   const { isDarkMode } = useContext(DarkModeContext);
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -284,6 +285,15 @@ function Home() {
               </div>
               
               <div className="flex space-x-4">
+                <button 
+                  onClick={() => navigate('/medicines')}
+                  className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-indigo-600 dark:from-purple-600 dark:to-indigo-700 text-white px-8 py-4 rounded-2xl hover:from-purple-600 hover:to-indigo-700 dark:hover:from-purple-700 dark:hover:to-indigo-800 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span className="font-medium">AI Medicine Search</span>
+                </button>
                 <button className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-700 text-white px-8 py-4 rounded-2xl hover:from-emerald-600 hover:to-teal-700 dark:hover:from-emerald-700 dark:hover:to-teal-800 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
                   <MagnifyingGlassIcon className="h-5 w-5" />
                   <span className="font-medium">Search</span>

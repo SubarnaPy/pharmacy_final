@@ -64,6 +64,14 @@ const OrderSchema = new Schema(
       required: true,
       min: 0,
     },
+    // Pricing breakdown
+    pricing: {
+      subtotal: { type: Number, default: 0 },
+      gst: { type: Number, default: 0 },
+      deliveryFee: { type: Number, default: 0 },
+      platformFee: { type: Number, default: 0 },
+      discount: { type: Number, default: 0 }
+    },
     // Delivery information
     deliveryInfo: {
       address: {

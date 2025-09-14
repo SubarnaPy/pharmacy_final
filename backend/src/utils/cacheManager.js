@@ -1,7 +1,6 @@
 // Advanced caching strategies for the pharmacy platform
-// Implements multi-level caching with Redis and in-memory caching
+// Implements in-memory caching without Redis dependency
 
-const Redis = require('redis');
 const NodeCache = require('node-cache');
 const { recordCacheOperation } = require('../middleware/performanceMonitoring');
 
@@ -14,77 +13,49 @@ class CacheManager {
       useClones: false // Better performance for read-heavy workloads
     });
 
-    // Redis client for distributed caching
-    this.redisClient = null;
-    this.isRedisConnected = false;
+    // In-memory only - no Redis dependency
     this.cacheHitCounts = new Map();
     this.cacheMissCounts = new Map();
+    
+    // Cleanup old cache statistics periodically
+    setInterval(() => {
+      if (this.cacheHitCounts.size > 1000) {
+        this.cacheHitCounts.clear();
+      }
+      if (this.cacheMissCounts.size > 1000) {
+        this.cacheMissCounts.clear();
+      }
+    }, 300000); // Every 5 minutes
   }
 
-  // Initialize Redis connection
-  async initializeRedis() {
+  // Initialize cache manager (in-memory only)
+  async initialize() {
     try {
-      this.redisClient = Redis.createClient({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: process.env.REDIS_PORT || 6379,
-        password: process.env.REDIS_PASSWORD,
-        db: process.env.REDIS_DB || 0,
-        retryDelayOnFailover: 100,
-        maxRetriesPerRequest: 3,
-        lazyConnect: true
-      });
-
-      this.redisClient.on('error', (error) => {
-        console.error('Redis connection error:', error);
-        this.isRedisConnected = false;
-      });
-
-      this.redisClient.on('connect', () => {
-        console.log('Redis connected successfully');
-        this.isRedisConnected = true;
-      });
-
-      await this.redisClient.connect();
+      console.log('Cache manager initialized (in-memory only)');
+      return true;
     } catch (error) {
-      console.error('Failed to initialize Redis:', error);
-      this.isRedisConnected = false;
+      console.error('Failed to initialize cache manager:', error);
+      return false;
     }
   }
 
-  // Multi-level get operation
+  // In-memory get operation
   async get(key, options = {}) {
     const startTime = Date.now();
-    const { useMemory = true, useRedis = true, deserialize = true } = options;
+    const { deserialize = true } = options;
 
     try {
-      // Try memory cache first
-      if (useMemory) {
-        const memoryResult = this.memoryCache.get(key);
-        if (memoryResult !== undefined) {
-          this.recordCacheHit('memory', key);
-          recordCacheOperation('get', (Date.now() - startTime) / 1000, 'memory', true);
-          return deserialize && typeof memoryResult === 'string' ? JSON.parse(memoryResult) : memoryResult;
-        }
-      }
-
-      // Try Redis cache
-      if (useRedis && this.isRedisConnected) {
-        const redisResult = await this.redisClient.get(key);
-        if (redisResult !== null) {
-          // Store in memory cache for faster future access
-          if (useMemory) {
-            this.memoryCache.set(key, redisResult, options.ttl || 300);
-          }
-          
-          this.recordCacheHit('redis', key);
-          recordCacheOperation('get', (Date.now() - startTime) / 1000, 'redis', true);
-          return deserialize ? JSON.parse(redisResult) : redisResult;
-        }
+      // Try memory cache
+      const memoryResult = this.memoryCache.get(key);
+      if (memoryResult !== undefined) {
+        this.recordCacheHit('memory', key);
+        recordCacheOperation('get', (Date.now() - startTime) / 1000, 'memory', true);
+        return deserialize && typeof memoryResult === 'string' ? JSON.parse(memoryResult) : memoryResult;
       }
 
       // Cache miss
-      this.recordCacheMiss('both', key);
-      recordCacheOperation('get', (Date.now() - startTime) / 1000, 'both', false);
+      this.recordCacheMiss('memory', key);
+      recordCacheOperation('get', (Date.now() - startTime) / 1000, 'miss', false);
       return null;
     } catch (error) {
       console.error(`Cache get error for key ${key}:`, error);
@@ -93,12 +64,10 @@ class CacheManager {
     }
   }
 
-  // Multi-level set operation
+  // In-memory set operation
   async set(key, value, options = {}) {
     const startTime = Date.now();
     const { 
-      useMemory = true, 
-      useRedis = true, 
       ttl = 300, 
       serialize = true,
       priority = 'normal'
@@ -108,20 +77,9 @@ class CacheManager {
       const serializedValue = serialize ? JSON.stringify(value) : value;
 
       // Set in memory cache
-      if (useMemory) {
-        this.memoryCache.set(key, serializedValue, ttl);
-      }
+      this.memoryCache.set(key, serializedValue, ttl);
 
-      // Set in Redis cache
-      if (useRedis && this.isRedisConnected) {
-        if (ttl > 0) {
-          await this.redisClient.setEx(key, ttl, serializedValue);
-        } else {
-          await this.redisClient.set(key, serializedValue);
-        }
-      }
-
-      recordCacheOperation('set', (Date.now() - startTime) / 1000, 'both');
+      recordCacheOperation('set', (Date.now() - startTime) / 1000, 'memory');
       return true;
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error);
@@ -130,7 +88,7 @@ class CacheManager {
     }
   }
 
-  // Delete from all cache levels
+  // Delete from cache
   async delete(key) {
     const startTime = Date.now();
 
@@ -138,12 +96,7 @@ class CacheManager {
       // Delete from memory cache
       this.memoryCache.del(key);
 
-      // Delete from Redis
-      if (this.isRedisConnected) {
-        await this.redisClient.del(key);
-      }
-
-      recordCacheOperation('delete', (Date.now() - startTime) / 1000, 'both');
+      recordCacheOperation('delete', (Date.now() - startTime) / 1000, 'memory');
       return true;
     } catch (error) {
       console.error(`Cache delete error for key ${key}:`, error);
@@ -164,15 +117,7 @@ class CacheManager {
       );
       matchingKeys.forEach(key => this.memoryCache.del(key));
 
-      // Delete from Redis
-      if (this.isRedisConnected) {
-        const redisKeys = await this.redisClient.keys(pattern);
-        if (redisKeys.length > 0) {
-          await this.redisClient.del(redisKeys);
-        }
-      }
-
-      recordCacheOperation('delete_pattern', (Date.now() - startTime) / 1000, 'both');
+      recordCacheOperation('delete_pattern', (Date.now() - startTime) / 1000, 'memory');
       return true;
     } catch (error) {
       console.error(`Cache pattern delete error for pattern ${pattern}:`, error);
@@ -241,7 +186,8 @@ class CacheManager {
         hitRate: memoryStats.hits / (memoryStats.hits + memoryStats.misses) || 0
       },
       redis: {
-        connected: this.isRedisConnected
+        connected: false,
+        status: 'disabled'
       },
       custom: {
         hits: Object.fromEntries(this.cacheHitCounts),
@@ -254,7 +200,7 @@ class CacheManager {
   async healthCheck() {
     const health = {
       memory: true,
-      redis: this.isRedisConnected,
+      redis: false,
       overall: true
     };
 
@@ -264,21 +210,15 @@ class CacheManager {
       this.memoryCache.set(testKey, 'test', 1);
       const result = this.memoryCache.get(testKey);
       health.memory = result === 'test';
+      this.memoryCache.del(testKey); // Cleanup test key
     } catch (error) {
       health.memory = false;
     }
 
-    // Test Redis
-    if (this.isRedisConnected) {
-      try {
-        await this.redisClient.ping();
-      } catch (error) {
-        health.redis = false;
-        this.isRedisConnected = false;
-      }
-    }
+    // Redis is disabled
+    health.redis = false;
 
-    health.overall = health.memory && health.redis;
+    health.overall = health.memory; // Only memory cache needs to work
     return health;
   }
 }
